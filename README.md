@@ -6,7 +6,7 @@ Coleccion de modulos Shiny reutilizables para ecosistemas analiticos corporativo
 
 ```r
 # Requiere devtools
-devtools::install_github("racafe/racafeModulos")
+devtools::install_github("HCamiloYateT/racafeModulos")
 ```
 
 > **Dependencia privada:** el paquete requiere `racafe`. Si no esta disponible en CRAN,
