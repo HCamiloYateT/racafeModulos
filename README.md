@@ -12,15 +12,33 @@ devtools::install_github("HCamiloYateT/racafeModulos")
 > **Dependencia privada:** el paquete requiere `racafe`. Si no está disponible en CRAN,
 > instálalo primero desde su repositorio correspondiente.
 
-## Módulos exportados
+## Estructura de la carpeta `R/`
 
-| Módulo | Descripción |
-|--------|-------------|
+- `R/modulos/`: módulos Shiny exportados.
+- `R/helpers/`: utilidades de formato para reutilizar en los módulos.
+- `R/demos/`: funciones de demostración y ejemplos ejecutables.
+
+## Funciones exportadas
+
+### Módulos
+
+| Función | Descripción |
+|---------|-------------|
 | `CajaModalUI()` | UI de caja tipo `bs4ValueBox` para uso en módulos Shiny. |
 | `CajaModal()` | Server del módulo que renderiza la caja y abre modal opcional. |
-| `DemoCajaModal()` | App de demostración con 12 variantes de uso. |
+
+### Helpers
+
+| Función | Descripción |
+|---------|-------------|
 | `html_valor()` | Helper para renderizar valores con formato y color. |
 | `html_texto()` | Helper para renderizar texto con estilo. |
+
+### Demos
+
+| Función | Descripción |
+|---------|-------------|
+| `DemoCajaModal()` | App de demostración con 12 variantes de uso. |
 
 ## CajaModal
 
