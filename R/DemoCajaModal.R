@@ -1,8 +1,9 @@
-# DemoCajaModal — App de demostracion del modulo CajaModal ====
-# Lanza una app Shiny con 12 cajas que cubren todas las variaciones posibles
-# del modulo CajaModal. Cada caja incluye un panel colapsable con el codigo
-# fuente de su bloque UI y Server para facilitar la consulta y aprendizaje.
-
+#' DemoCajaModal: script de app de demostración
+#'
+#' Este script contiene la función exportada `DemoCajaModal()` y módulos
+#' auxiliares internos que ilustran escenarios de uso de `CajaModal()`.
+#'
+#' @keywords internal
 
 #' Lanza la app de demostracion de CajaModal
 #'

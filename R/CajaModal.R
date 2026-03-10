@@ -1,10 +1,9 @@
-# CajaModal — Modulo Shiny reutilizable ====
-# Encapsula un ValueBox (racafe::CajaValor / bs4Dash) con la capacidad de
-# abrir un modal al hacer click. El contenido del modal es arbitrario y se
-# define desde el modulo padre como una funcion sin argumentos.
-#
-# Dependencias: shiny, bs4Dash, htmltools, racafe
-
+#' CajaModal: módulo Shiny reutilizable para KPIs con modal
+#'
+#' Script principal del módulo `CajaModal`, incluyendo helpers de formato
+#' (`html_valor()` y `html_texto()`), función UI y función server.
+#'
+#' @keywords internal
 
 # Helpers HTML ----
 
