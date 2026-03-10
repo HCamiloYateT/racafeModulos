@@ -9,8 +9,7 @@ Colección de módulos Shiny reutilizables para ecosistemas analíticos corporat
 devtools::install_github("HCamiloYateT/racafeModulos")
 ```
 
-> **Dependencia privada:** el paquete requiere `racafe`. Si no está disponible en CRAN,
-> instálalo primero desde su repositorio correspondiente.
+> **Dependencia privada:** el paquete requiere `racafe`.
 
 ## Estructura de la carpeta `R/`
 
