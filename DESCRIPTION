@@ -6,8 +6,9 @@ Authors@R: person("Racafe", "Analytics", role = c("aut", "cre"),
 Description: Coleccion de modulos Shiny modulares y reutilizables orientados
     a dashboards analiticos corporativos. Incluye CajaModal, un ValueBox
     interactivo basado en bs4Dash que permite abrir modales con contenido
-    arbitrario definido por el modulo padre, y su funcion de demostracion
-    DemoCajaModal que cubre todas las variaciones documentadas del modulo.
+    arbitrario definido por el modulo padre, TablaReactable para tablas
+    interactivas con seleccion configurable y modal integrado, y funciones
+    demo para acelerar su adopcion en aplicaciones analiticas.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -18,9 +19,9 @@ Imports:
     shiny (>= 1.7.0),
     bs4Dash (>= 2.3.0),
     htmltools (>= 0.5.0),
+    reactable (>= 0.4.0),
     racafe
 Suggests:
-    reactable (>= 0.4.0),
     dplyr (>= 1.1.0),
     plotly (>= 4.10.0),
     gt (>= 0.9.0),

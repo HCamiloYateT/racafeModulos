@@ -25,6 +25,8 @@ devtools::install_github("HCamiloYateT/racafeModulos")
 |---------|-------------|
 | `CajaModalUI()` | UI de caja tipo `bs4ValueBox` para uso en módulos Shiny. |
 | `CajaModal()` | Server del módulo que renderiza la caja y abre modal opcional. |
+| `TablaReactableUI()` | UI del módulo de tabla reactable con cabecera, nota y badge opcional. |
+| `TablaReactable()` | Server del módulo de tabla con selección por fila/celda/columna y modal integrado. |
 
 ### Helpers
 
@@ -91,10 +93,10 @@ CajaModal(
 - `bs4Dash >= 2.3.0`
 - `htmltools >= 0.5.0`
 - `racafe`
-
-**Suggests** (requeridas para `DemoCajaModal()`):
-
 - `reactable >= 0.4.0`
+
+**Suggests** (requeridas para demos y ejemplos extendidos):
+
 - `dplyr >= 1.1.0`
 - `plotly >= 4.10.0`
 - `gt >= 0.9.0`
@@ -104,4 +106,30 @@ CajaModal(
 
 ```r
 racafeModulos::DemoCajaModal()
+```
+
+
+## TablaReactable
+
+`TablaReactableUI()` + `TablaReactable()` proveen una tabla basada en `reactable` con:
+
+- selección configurable por `fila`, `celda`, `columna` o `ninguno`;
+- filtros de interacción en JS (`cols_activos`, `filas_bloqueadas`);
+- normalización de selección para lógica del módulo padre;
+- modal integrado opcional con `modal_titulo_fn` y `modal_contenido_fn`;
+- búsqueda en español y ordenamiento nativo por encabezado.
+
+```r
+# UI
+TablaReactableUI("tabla_ventas", titulo = "Ventas")
+
+# Server
+TablaReactable(
+  id = "tabla_ventas",
+  data = reactive(df_ventas),
+  modo_seleccion = "celda",
+  id_col = "id",
+  modal_titulo_fn = function(sel) paste("Detalle", sel$id),
+  modal_contenido_fn = function(sel) shiny::tags$pre(str(sel))
+)
 ```
