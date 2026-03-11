@@ -257,37 +257,47 @@
 
 #' @keywords internal
 .normalizar_seleccion <- function(click, modo, df, id_col) {
+  if (!is.list(click)) return(NULL)
+
+  row_index <- suppressWarnings(as.integer(click[["row_index"]]))
+  values <- click[["values"]]
+
   switch(
     modo,
     fila = {
-      id_val <- if (!is.null(id_col)) click$values[[id_col]] else click$row_index
-      fila_df <- if (!is.null(id_col)) {
+      id_val <- if (!is.null(id_col) && !is.null(values)) values[[id_col]] else row_index
+      fila_df <- if (!is.null(id_col) && !is.null(id_val)) {
         df[df[[id_col]] == id_val, , drop = FALSE]
+      } else if (!is.na(row_index)) {
+        df[row_index + 1L, , drop = FALSE]
       } else {
-        df[click$row_index + 1L, , drop = FALSE]
+        df[0, , drop = FALSE]
       }
       list(modo = "fila", id = id_val, fila = fila_df)
     },
     celda = {
-      id_val <- if (!is.null(id_col)) click$values[[id_col]] else click$row_index
-      fila_df <- if (!is.null(id_col)) {
+      id_val <- if (!is.null(id_col) && !is.null(values)) values[[id_col]] else row_index
+      fila_df <- if (!is.null(id_col) && !is.null(id_val)) {
         df[df[[id_col]] == id_val, , drop = FALSE]
+      } else if (!is.na(row_index)) {
+        df[row_index + 1L, , drop = FALSE]
       } else {
-        df[click$row_index + 1L, , drop = FALSE]
+        df[0, , drop = FALSE]
       }
       list(
         modo = "celda",
         id = id_val,
-        col = click$col,
-        valor = click$valor,
+        col = click[["col"]],
+        valor = click[["valor"]],
         fila = fila_df
       )
     },
     columna = {
+      col <- click[["col"]]
       list(
         modo = "columna",
-        col = click$col,
-        data = df[, click$col, drop = FALSE]
+        col = col,
+        data = if (!is.null(col) && col %in% names(df)) df[, col, drop = FALSE] else df[0, , drop = FALSE]
       )
     }
   )
@@ -509,6 +519,7 @@ TablaReactable <- function(
     shiny::observeEvent(input$click, {
       shiny::req(!is.null(input$click))
       sel <- .normalizar_seleccion(input$click, modo_seleccion, data(), id_col)
+      if (is.null(sel)) return()
 
       if (!is.null(filas_seleccionables) && sel$modo %in% c("fila", "celda")) {
         permitida <- if (is.function(filas_seleccionables)) {

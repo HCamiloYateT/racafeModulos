@@ -636,7 +636,7 @@ DemoTablaReactable <- function(...) {
                   shiny::tags$option("Ana Torres"), shiny::tags$option("Luis Gomez"),
                   shiny::tags$option("Maria Rios"))))
             ),
-            shiny::tags$p(shiny::icon("circle-info"), " Formulario simulado.",
+            shiny::tags$p(shiny::icon("info-circle"), " Formulario simulado.",
                           style = "font-size:11px; color:#888; margin-top:6px;")
           )
         } else if (sel$col == "Contacto") {
@@ -647,7 +647,7 @@ DemoTablaReactable <- function(...) {
               shiny::tags$label("Observaciones", style = "font-size:12px;"),
               shiny::tags$textarea(class = "form-control form-control-sm", rows = 3,
                                    placeholder = "Resultado del contacto...")),
-            shiny::tags$p(shiny::icon("circle-info"), " Formulario simulado.",
+            shiny::tags$p(shiny::icon("info-circle"), " Formulario simulado.",
                           style = "font-size:11px; color:#888; margin-top:6px;")
           )
         } else {
@@ -671,11 +671,11 @@ DemoTablaReactable <- function(...) {
         color = "white")),
     sidebar = bs4Dash::bs4DashSidebar(bs4Dash::bs4SidebarMenu(
       bs4Dash::bs4SidebarMenuSubItem("Base",              "tab_grupo_base",    icon = shiny::icon("table")),
-      bs4Dash::bs4SidebarMenuItem("Modo Fila",            "tab_fila",          icon = shiny::icon("table-rows")),
-      bs4Dash::bs4SidebarMenuItem("Modo Celda",           "tab_celda",         icon = shiny::icon("table-cells")),
-      bs4Dash::bs4SidebarMenuItem("Modo Columna",         "tab_columna",       icon = shiny::icon("table-columns")),
-      bs4Dash::bs4SidebarMenuItem("Solo lectura",         "tab_ninguno",       icon = shiny::icon("book-open")),
-      bs4Dash::bs4SidebarMenuSubItem("Avanzado",          "tab_grupo_avanzado",icon = shiny::icon("wand-magic-sparkles")),
+      bs4Dash::bs4SidebarMenuItem("Modo Fila",            "tab_fila",          icon = shiny::icon("table")),
+      bs4Dash::bs4SidebarMenuItem("Modo Celda",           "tab_celda",         icon = shiny::icon("th")),
+      bs4Dash::bs4SidebarMenuItem("Modo Columna",         "tab_columna",       icon = shiny::icon("columns")),
+      bs4Dash::bs4SidebarMenuItem("Solo lectura",         "tab_ninguno",       icon = shiny::icon("book")),
+      bs4Dash::bs4SidebarMenuSubItem("Avanzado",          "tab_grupo_avanzado",icon = shiny::icon("magic")),
       bs4Dash::bs4SidebarMenuItem("Modal — Fila",    "tab_modal_fila",    icon = shiny::icon("window-restore")),
       bs4Dash::bs4SidebarMenuItem("Modal — Celda",   "tab_modal_celda",   icon = shiny::icon("hand-pointer")),
       bs4Dash::bs4SidebarMenuItem("Showcase col_specs",   "tab_col_specs",     icon = shiny::icon("sliders")),
@@ -754,7 +754,7 @@ DemoTablaReactable <- function(...) {
             title  = "Modal con modulo hijo — Fila",
             width  = 12, solidHeader = TRUE, status = "success",
             footer = shiny::tags$div(class = "caja-modal-footer",
-              shiny::tags$div(shiny::icon("circle-info"),
+              shiny::tags$div(shiny::icon("info-circle"),
                               " Patron eager: DetalleClienteModal registrado al arrancar."),
               shiny::tags$div(shiny::icon("bolt"),
                               " modal_pre_fn actualiza rv antes de showModal().")),
@@ -791,7 +791,7 @@ DemoTablaReactable <- function(...) {
             title  = "Showcase col_specs — formatos racafe",
             width  = 12, solidHeader = TRUE, status = "info",
             footer = shiny::tags$div(class = "caja-modal-footer",
-              shiny::tags$div(shiny::icon("circle-info"),
+              shiny::tags$div(shiny::icon("info-circle"),
                               " Formatos: coma, dinero, porcentaje, kwh, millones."),
               shiny::tags$div(shiny::icon("triangle-exclamation"),
                               " porcentaje escala x100: valores deben ser [0, 1].")),
@@ -811,7 +811,7 @@ DemoTablaReactable <- function(...) {
         shiny::fluidRow(shiny::column(12,
           bs4Dash::bs4Card(
             title  = "Presupuesto por asesor", width = 12, solidHeader = TRUE, status = "primary",
-            footer = shiny::tags$div(class = "caja-modal-footer", shiny::icon("circle-info"),
+            footer = shiny::tags$div(class = "caja-modal-footer", shiny::icon("info-circle"),
                                      " Seleccionar fila activa DetalleAsesor: KPIs + barras + sub-tabla."),
             TablaReactableUI("demo_ext_asesor", titulo = "Presupuesto por asesor",
                              subtitulo = "Seleccione un asesor para ver el detalle",
@@ -827,7 +827,7 @@ DemoTablaReactable <- function(...) {
         shiny::fluidRow(shiny::column(12,
           bs4Dash::bs4Card(
             title  = "Clientes", width = 12, solidHeader = TRUE, status = "primary",
-            footer = shiny::tags$div(class = "caja-modal-footer", shiny::icon("circle-info"),
+            footer = shiny::tags$div(class = "caja-modal-footer", shiny::icon("info-circle"),
                                      " Seleccionar cliente activa ResumenSegmento: KPIs + dona + sub-tabla."),
             TablaReactableUI("demo_ext_segmento",
                              titulo = "Clientes — seleccion de segmento",
@@ -848,7 +848,7 @@ DemoTablaReactable <- function(...) {
             footer = shiny::tags$div(class = "caja-modal-footer",
               shiny::icon("ban"), " filas_bloqueadas = c('TOTAL','OTROS') suprimidas en JS.",
               shiny::tags$br(),
-              shiny::icon("circle-info"),
+              shiny::icon("info-circle"),
               " modal_titulo_fn + modal_contenido_fn activan showModal(): cero observeEvent."),
             TablaReactableUI("demo_panel_inline",
                              titulo = "Cartera — modal con filas bloqueadas",
@@ -862,7 +862,7 @@ DemoTablaReactable <- function(...) {
             bs4Dash::bs4Card(
               title  = "Tabla — seleccion", width = 12, solidHeader = TRUE, status = "primary",
               footer = shiny::tags$div(class = "caja-modal-footer",
-                shiny::icon("circle-info"),
+                shiny::icon("info-circle"),
                 " Patron inline: seleccion() emitida al padre via observeEvent + renderUI."),
               TablaReactableUI("demo_panel_externo", titulo = "Presupuesto por asesor",
                                subtitulo = "Seleccione un asesor para ver el panel lateral",
@@ -880,7 +880,7 @@ DemoTablaReactable <- function(...) {
             title  = "Restriccion de columnas activas", width = 12,
             solidHeader = TRUE, status = "warning",
             footer = shiny::tags$div(class = "caja-modal-footer",
-              shiny::icon("circle-info"),
+              shiny::icon("info-circle"),
               " cols_activos = c('Editar','Contacto'): filtro JS puro, sin round-trip."),
             TablaReactableUI("demo_rest_cols",
                              titulo = "Leads — solo columnas de accion activas",
