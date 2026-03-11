@@ -175,10 +175,30 @@
   col_header_idx <- seq_len(col_header_n)
   col_specs <- col_specs %||% list()
 
+  if (!is.list(col_specs)) {
+    col_specs <- as.list(col_specs)
+  }
+
+  normalizar_spec <- function(x) {
+    if (is.null(x)) return(list())
+    if (is.list(x)) return(x)
+
+    x_list <- as.list(x)
+    if (!is.null(names(x_list)) && any(nzchar(names(x_list)))) {
+      return(x_list)
+    }
+
+    if (length(x_list) == 1L && is.atomic(x)) {
+      return(list(formato = as.character(x[[1L]])))
+    }
+
+    list()
+  }
+
   defaults <- stats::setNames(
     lapply(seq_along(nms), function(i) {
       nm <- nms[[i]]
-      specs <- col_specs[[nm]] %||% list()
+      specs <- normalizar_spec(col_specs[[nm]])
 
       if (!is.null(id_col) && nm == id_col) {
         return(reactable::colDef(show = FALSE))
