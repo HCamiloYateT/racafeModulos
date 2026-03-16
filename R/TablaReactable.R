@@ -243,7 +243,9 @@
           minWidth = min_width,
           maxWidth = max_width,
           align = alinear,
-          style = color_fn
+          style = color_fn,
+          sortNALast = TRUE,
+          sortMethod = .js_sort_otros_total_last()
         )
       }
     }),
@@ -272,6 +274,34 @@
       return 'rt-fila-otros';
     }
     return '';
+  }")
+}
+
+#' @keywords internal
+.js_sort_otros_total_last <- function() {
+  reactable::JS("function(a, b, desc) {
+    var norm = function(x) {
+      if (x === null || x === undefined) return '';
+      return String(x).trim().toUpperCase();
+    };
+
+    var rank = function(x) {
+      if (x === 'TOTAL') return 2;
+      if (x === 'OTROS') return 1;
+      return 0;
+    };
+
+    var aa = norm(a);
+    var bb = norm(b);
+    var ra = rank(aa);
+    var rb = rank(bb);
+
+    if (ra !== rb) {
+      return ra > rb ? 1 : -1;
+    }
+
+    var cmp = aa.localeCompare(bb, undefined, { numeric: true, sensitivity: 'base' });
+    return desc ? -cmp : cmp;
   }")
 }
 
