@@ -502,6 +502,7 @@
 #' @param footer Contenido del footer: `NULL` | string | `tagList`.
 #' @param footer_tipo Estilo del footer: `"info"` | `"warning"` | `"dark"` | `"danger"`.
 #' @param sortable Activar estilos de encabezado ordenable. Debe coincidir con el server.
+#' @param mostrar_nota Mostrar nota de interaccion debajo de la tabla.
 #'
 #' @return `shiny.tag` contenedor con `reactableOutput`, nota y badge.
 #' @export
@@ -511,7 +512,8 @@ TablaReactableUI <- function(
     subtitulo = NULL,
     footer = NULL,
     footer_tipo = c("info", "warning", "dark", "danger"),
-    sortable = TRUE
+    sortable = TRUE,
+    mostrar_nota = TRUE
 ) {
   ns <- shiny::NS(id)
   footer_tipo <- match.arg(footer_tipo)
@@ -535,7 +537,7 @@ TablaReactableUI <- function(
     header_bloque,
     reactable::reactableOutput(ns("tabla_cuerpo")),
     shiny::uiOutput(ns("tabla_fijas_ui")),
-    shiny::uiOutput(ns("nota_interaccion")),
+    if (isTRUE(mostrar_nota)) shiny::uiOutput(ns("nota_interaccion")),
     .footer_bloque(footer, footer_tipo),
     shiny::uiOutput(ns("badge_seleccion"))
   )
@@ -562,6 +564,7 @@ TablaReactableUI <- function(
 #' @param page_size Filas por pagina del cuerpo.
 #' @param compact Modo compacto.
 #' @param mostrar_badge Muestra resumen del ultimo click.
+#' @param mostrar_nota Mostrar nota de interaccion debajo de la tabla.
 #' @param modal_titulo_fn Funcion `function(sel)` para titulo del modal.
 #' @param modal_contenido_fn Funcion `function(sel)` para cuerpo del modal.
 #' @param modal_pre_fn Hook previo sincronico antes de `showModal()`.
@@ -592,6 +595,7 @@ TablaReactable <- function(
     page_size = 15,
     compact = TRUE,
     mostrar_badge = FALSE,
+    mostrar_nota = TRUE,
     modal_titulo_fn = NULL,
     modal_contenido_fn = NULL,
     modal_pre_fn = NULL,
@@ -709,6 +713,7 @@ TablaReactable <- function(
 
     # Nota de interaccion con restricciones activas
     output$nota_interaccion <- shiny::renderUI({
+      if (!isTRUE(mostrar_nota)) return(NULL)
       .nota_interaccion(
         modo_seleccion       = modo_seleccion,
         sortable             = sortable,
