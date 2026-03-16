@@ -77,15 +77,13 @@
 }
 
 #' Genera JS de click en encabezado para sort server-side
-#' Alterna asc/desc en clics sucesivos sobre la misma columna
+#' Solo emite la columna clicada; el toggle asc/desc lo resuelve R en sort_estado
 #' @keywords internal
 .js_header_sort <- function(sort_input_id, col_name) {
   paste0(
     "function(column) {",
-    "  var cur = column.isSorted ? (column.isSortedDesc ? 'asc' : 'desc') : 'asc';",
     "  Shiny.setInputValue('", sort_input_id, "', {",
     "    col   : '", col_name, "',",
-    "    dir   : cur,",
     "    nonce : Math.random()",
     "  }, {priority: 'event'});",
     "}"
@@ -602,13 +600,19 @@ TablaReactable <- function(
     seleccion_r <- shiny::reactiveVal(NULL)
     sort_estado <- shiny::reactiveVal(list(col = NULL, dir = "asc"))
 
-    # Captura de click en encabezado emitido por .js_header_sort
+    # Captura de click en encabezado; toggle asc/desc calculado en R
     shiny::observeEvent(input$sort_header, {
       shiny::req(!is.null(input$sort_header))
-      click <- input$sort_header
-      col   <- click[["col"]]
-      dir   <- click[["dir"]]
-      if (!is.null(col) && nzchar(col)) sort_estado(list(col = col, dir = dir))
+      col_nuevo <- input$sort_header[["col"]]
+      if (is.null(col_nuevo) || !nzchar(col_nuevo)) return()
+      st_actual <- sort_estado()
+      # Misma columna: invertir direccion; columna nueva: iniciar en asc
+      nueva_dir <- if (!is.null(st_actual$col) && st_actual$col == col_nuevo) {
+        if (identical(st_actual$dir, "asc")) "desc" else "asc"
+      } else {
+        "asc"
+      }
+      sort_estado(list(col = col_nuevo, dir = nueva_dir))
     }, ignoreNULL = TRUE)
 
     # Dataframe ordenado: sort en R garantiza filas fijas siempre al final
