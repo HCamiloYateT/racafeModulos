@@ -81,8 +81,8 @@
 .nota_interaccion <- function(modo_seleccion, sortable) {
   txt_modo <- switch(
     modo_seleccion,
-    fila    = "ℹ️  Clic en una fila para abrir su detalle.",
-    celda   = paste0(
+    fila = "ℹ️  Clic en una fila para abrir su detalle.",
+    celda = paste0(
       "ℹ️  Clic en una celda para ver su detalle;",
       " el encabezado identifica la columna seleccionada."
     ),
@@ -113,10 +113,10 @@
 
   css_class <- switch(
     footer_tipo,
-    info    = "caja-modal-footer",
+    info = "caja-modal-footer",
     warning = "caja-modal-footer-warning",
-    dark    = "caja-modal-footer-dark",
-    danger  = "caja-modal-footer-danger",
+    dark = "caja-modal-footer-dark",
+    danger = "caja-modal-footer-danger",
     "caja-modal-footer"
   )
 
@@ -141,7 +141,7 @@
 
   if (formato == "fecha") {
     return(function(v) {
-      if (is.na(v)) return("-")
+      if (is.na(v)) return("—")
       tryCatch(format(as.Date(v), "%d/%m/%Y"), error = function(e) as.character(v))
     })
   }
@@ -156,7 +156,7 @@
   formateador <- racafe::DefinirFormato(formato)
 
   function(v) {
-    if (is.na(v)) return("-")
+    if (is.na(v)) return("—")
     formateador(v)
   }
 }
@@ -171,18 +171,22 @@
     col_header_n,
     sortable_flag
 ) {
-  nms            <- names(data)
+  nms <- names(data)
   col_header_idx <- seq_len(col_header_n)
-  col_specs      <- col_specs %||% list()
+  col_specs <- col_specs %||% list()
 
-  if (!is.list(col_specs)) col_specs <- as.list(col_specs)
+  if (!is.list(col_specs)) {
+    col_specs <- as.list(col_specs)
+  }
 
   normalizar_spec <- function(x) {
     if (is.null(x)) return(list())
     if (is.list(x)) return(x)
 
     x_list <- as.list(x)
-    if (!is.null(names(x_list)) && any(nzchar(names(x_list)))) return(x_list)
+    if (!is.null(names(x_list)) && any(nzchar(names(x_list)))) {
+      return(x_list)
+    }
 
     if (length(x_list) == 1L && is.atomic(x)) {
       return(list(formato = as.character(x[[1L]])))
@@ -193,51 +197,53 @@
 
   defaults <- stats::setNames(
     lapply(seq_along(nms), function(i) {
-      nm    <- nms[[i]]
+      nm <- nms[[i]]
       specs <- normalizar_spec(col_specs[[nm]])
 
-      if (!is.null(id_col) && nm == id_col) return(reactable::colDef(show = FALSE))
+      if (!is.null(id_col) && nm == id_col) {
+        return(reactable::colDef(show = FALSE))
+      }
 
       extra_class <- if (i %in% col_header_idx) "rt-col-header" else NULL
-      label     <- specs$label    %||% nm
-      formato   <- specs$formato  %||% "numero"
+      label <- specs$label %||% nm
+      formato <- specs$formato %||% "numero"
       min_width <- specs$min_width %||% NULL
       max_width <- specs$max_width %||% NULL
-      color_fn  <- specs$color_fn
-      alinear   <- specs$alinear  %||% NULL
+      color_fn <- specs$color_fn
+      alinear <- specs$alinear %||% NULL
 
       if (is.numeric(data[[nm]])) {
         fmt_fn <- .resolver_fmt_celda(formato)
         reactable::colDef(
-          name     = label,
-          class    = extra_class,
+          name = label,
+          class = extra_class,
           sortable = sortable_flag,
           minWidth = min_width,
           maxWidth = max_width,
-          align    = alinear,
-          cell     = fmt_fn,
-          style    = color_fn
+          align = alinear,
+          cell = fmt_fn,
+          style = color_fn
         )
       } else if (inherits(data[[nm]], c("Date", "POSIXct", "POSIXlt"))) {
         fmt_fn <- .resolver_fmt_celda(specs$formato %||% "fecha")
         reactable::colDef(
-          name     = label,
-          class    = extra_class,
+          name = label,
+          class = extra_class,
           sortable = sortable_flag,
           minWidth = min_width,
           maxWidth = max_width,
-          cell     = fmt_fn,
-          style    = color_fn
+          cell = fmt_fn,
+          style = color_fn
         )
       } else {
         reactable::colDef(
-          name     = label,
-          class    = extra_class,
+          name = label,
+          class = extra_class,
           sortable = sortable_flag,
           minWidth = min_width,
           maxWidth = max_width,
-          align    = alinear,
-          style    = color_fn
+          align = alinear,
+          style = color_fn
         )
       }
     }),
@@ -245,7 +251,9 @@
   )
 
   if (!is.null(columnas_override)) {
-    for (nm in names(columnas_override)) defaults[[nm]] <- columnas_override[[nm]]
+    for (nm in names(columnas_override)) {
+      defaults[[nm]] <- columnas_override[[nm]]
+    }
   }
 
   defaults
@@ -272,12 +280,12 @@
   if (!is.list(click)) return(NULL)
 
   row_index <- suppressWarnings(as.integer(click[["row_index"]]))
-  values    <- click[["values"]]
+  values <- click[["values"]]
 
   switch(
     modo,
     fila = {
-      id_val  <- if (!is.null(id_col) && !is.null(values)) values[[id_col]] else row_index
+      id_val <- if (!is.null(id_col) && !is.null(values)) values[[id_col]] else row_index
       fila_df <- if (!is.null(id_col) && !is.null(id_val)) {
         df[df[[id_col]] == id_val, , drop = FALSE]
       } else if (!is.na(row_index)) {
@@ -288,7 +296,7 @@
       list(modo = "fila", id = id_val, fila = fila_df)
     },
     celda = {
-      id_val  <- if (!is.null(id_col) && !is.null(values)) values[[id_col]] else row_index
+      id_val <- if (!is.null(id_col) && !is.null(values)) values[[id_col]] else row_index
       fila_df <- if (!is.null(id_col) && !is.null(id_val)) {
         df[df[[id_col]] == id_val, , drop = FALSE]
       } else if (!is.na(row_index)) {
@@ -297,23 +305,19 @@
         df[0, , drop = FALSE]
       }
       list(
-        modo  = "celda",
-        id    = id_val,
-        col   = click[["col"]],
+        modo = "celda",
+        id = id_val,
+        col = click[["col"]],
         valor = click[["valor"]],
-        fila  = fila_df
+        fila = fila_df
       )
     },
     columna = {
       col <- click[["col"]]
       list(
         modo = "columna",
-        col  = col,
-        data = if (!is.null(col) && col %in% names(df)) {
-          df[, col, drop = FALSE]
-        } else {
-          df[0, , drop = FALSE]
-        }
+        col = col,
+        data = if (!is.null(col) && col %in% names(df)) df[, col, drop = FALSE] else df[0, , drop = FALSE]
       )
     }
   )
@@ -337,10 +341,10 @@
 
   css <- switch(
     modal_footer_tipo,
-    info    = "caja-modal-footer",
+    info = "caja-modal-footer",
     warning = "caja-modal-footer-warning",
-    dark    = "caja-modal-footer-dark",
-    danger  = "caja-modal-footer-danger",
+    dark = "caja-modal-footer-dark",
+    danger = "caja-modal-footer-danger",
     "caja-modal-footer"
   )
 
@@ -366,6 +370,7 @@
 #' @param footer Contenido del footer: `NULL` | string | `tagList`.
 #' @param footer_tipo Estilo del footer: `"info"` | `"warning"` | `"dark"` | `"danger"`.
 #' @param sortable Activar estilos de encabezado ordenable. Debe coincidir con el server.
+#' @param mostrar_nota Mostrar nota de interaccion debajo de la tabla.
 #'
 #' @return `shiny.tag` contenedor con `reactableOutput`, nota y badge.
 #' @export
@@ -375,7 +380,8 @@ TablaReactableUI <- function(
     subtitulo = NULL,
     footer = NULL,
     footer_tipo = c("info", "warning", "dark", "danger"),
-    sortable = TRUE
+    sortable = TRUE,
+    mostrar_nota = TRUE
 ) {
   ns <- shiny::NS(id)
   footer_tipo <- match.arg(footer_tipo)
@@ -398,7 +404,7 @@ TablaReactableUI <- function(
     class = clases_contenedor,
     header_bloque,
     reactable::reactableOutput(ns("tabla")),
-    shiny::uiOutput(ns("nota_interaccion")),
+    if (isTRUE(mostrar_nota)) shiny::uiOutput(ns("nota_interaccion")),
     .footer_bloque(footer, footer_tipo),
     shiny::uiOutput(ns("badge_seleccion"))
   )
@@ -422,6 +428,7 @@ TablaReactableUI <- function(
 #' @param page_size Filas por pagina.
 #' @param compact Modo compacto.
 #' @param mostrar_badge Muestra resumen del ultimo click.
+#' @param mostrar_nota Mostrar nota de interaccion debajo de la tabla.
 #' @param modal_titulo_fn Funcion `function(sel)` para titulo del modal.
 #' @param modal_contenido_fn Funcion `function(sel)` para cuerpo del modal.
 #' @param modal_pre_fn Hook previo sincronico antes de `showModal()`.
@@ -448,6 +455,7 @@ TablaReactable <- function(
     page_size = 15,
     compact = TRUE,
     mostrar_badge = FALSE,
+    mostrar_nota = TRUE,
     modal_titulo_fn = NULL,
     modal_contenido_fn = NULL,
     modal_pre_fn = NULL,
@@ -459,13 +467,13 @@ TablaReactable <- function(
     filas_bloqueadas = NULL,
     filas_seleccionables = NULL
 ) {
-  modo_seleccion    <- match.arg(modo_seleccion)
+  modo_seleccion <- match.arg(modo_seleccion)
   modal_footer_tipo <- match.arg(modal_footer_tipo)
-  col_header_n      <- max(1L, as.integer(col_header_n))
+  col_header_n <- max(1L, as.integer(col_header_n))
 
-  cols_activos_json     <- .to_json_arr(cols_activos)
+  cols_activos_json <- .to_json_arr(cols_activos)
   filas_bloqueadas_json <- .to_json_arr(filas_bloqueadas)
-  usar_modal            <- !is.null(modal_titulo_fn) && !is.null(modal_contenido_fn)
+  usar_modal <- !is.null(modal_titulo_fn) && !is.null(modal_contenido_fn)
 
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -473,68 +481,63 @@ TablaReactable <- function(
 
     on_click <- switch(
       modo_seleccion,
-      fila = reactable::JS(
-        .js_fila(ns("click"), filas_bloqueadas_json = filas_bloqueadas_json)
-      ),
-      celda = reactable::JS(
-        .js_celda(
-          ns("click"),
-          cols_activos_json     = cols_activos_json,
-          filas_bloqueadas_json = filas_bloqueadas_json
-        )
-      ),
-      columna = reactable::JS(
-        .js_columna(ns("click"), cols_activos_json = cols_activos_json)
-      ),
+      fila = reactable::JS(.js_fila(ns("click"), filas_bloqueadas_json = filas_bloqueadas_json)),
+      celda = reactable::JS(.js_celda(
+        ns("click"),
+        cols_activos_json = cols_activos_json,
+        filas_bloqueadas_json = filas_bloqueadas_json
+      )),
+      columna = reactable::JS(.js_columna(ns("click"), cols_activos_json = cols_activos_json)),
       ninguno = NULL
     )
 
     output$tabla <- reactable::renderReactable({
       shiny::req(data())
-      df      <- data()
+      df <- data()
       coldefs <- .coldefs_default(
-        data              = df,
+        data = df,
         columnas_override = columnas,
-        col_specs         = col_specs,
-        id_col            = id_col,
-        col_header_n      = col_header_n,
-        sortable_flag     = sortable
+        col_specs = col_specs,
+        id_col = id_col,
+        col_header_n = col_header_n,
+        sortable_flag = sortable
       )
       reactable::reactable(
-        data            = df,
-        columns         = coldefs,
-        onClick         = on_click,
-        rowClass        = .js_row_class(),
-        sortable        = sortable,
-        highlight       = modo_seleccion != "ninguno",
-        searchable      = searchable,
+        data = df,
+        columns = coldefs,
+        onClick = on_click,
+        rowClass = .js_row_class(),
+        sortable = sortable,
+        highlight = modo_seleccion != "ninguno",
+        searchable = searchable,
         defaultPageSize = page_size,
-        compact         = compact,
-        bordered        = TRUE,
-        striped         = FALSE,
+        compact = compact,
+        bordered = TRUE,
+        striped = FALSE,
         language = reactable::reactableLang(
           searchPlaceholder = "Buscar...",
-          noData            = "Sin resultados",
-          pageInfo          = "{rowStart}\u2013{rowEnd} de {rows} registros",
-          pagePrevious      = "Anterior",
-          pageNext          = "Siguiente"
+          noData = "Sin resultados",
+          pageInfo = "{rowStart}–{rowEnd} de {rows} registros",
+          pagePrevious = "Anterior",
+          pageNext = "Siguiente"
         ),
         theme = reactable::reactableTheme(
           headerStyle = list(
             fontWeight = "600",
-            fontSize   = "12px",
-            cursor     = if (sortable) "pointer" else "default"
+            fontSize = "12px",
+            cursor = if (sortable) "pointer" else "default"
           ),
           cellStyle = list(
             fontSize = "12px",
-            padding  = "3px 6px",
-            cursor   = if (modo_seleccion != "ninguno") "pointer" else "default"
+            padding = "3px 6px",
+            cursor = if (modo_seleccion != "ninguno") "pointer" else "default"
           )
         )
       )
     })
 
     output$nota_interaccion <- shiny::renderUI({
+      if (!isTRUE(mostrar_nota)) return(NULL)
       .nota_interaccion(modo_seleccion, sortable)
     })
 
@@ -557,10 +560,10 @@ TablaReactable <- function(
       if (usar_modal) {
         if (!is.null(modal_pre_fn)) modal_pre_fn(sel)
         shiny::showModal(shiny::modalDialog(
-          title     = .modal_titulo_tag(sel, modal_titulo_fn, modal_icon),
-          size      = modal_size,
+          title = .modal_titulo_tag(sel, modal_titulo_fn, modal_icon),
+          size = modal_size,
           easyClose = TRUE,
-          footer    = .modal_footer_bloque(modal_footer, modal_footer_tipo),
+          footer = .modal_footer_bloque(modal_footer, modal_footer_tipo),
           modal_contenido_fn(sel)
         ))
       }
@@ -571,8 +574,8 @@ TablaReactable <- function(
       sel <- seleccion_r()
       txt <- switch(
         sel$modo,
-        fila    = paste0("Fila: ", sel$id),
-        celda   = paste0("Celda [", sel$col, "] = ", sel$valor, "  \u2014  ID: ", sel$id),
+        fila = paste0("Fila: ", sel$id),
+        celda = paste0("Celda [", sel$col, "] = ", sel$valor, "  —  ID: ", sel$id),
         columna = paste0("Columna: ", sel$col)
       )
       shiny::tags$p(
@@ -584,8 +587,8 @@ TablaReactable <- function(
 
     list(
       seleccion = shiny::reactive(seleccion_r()),
-      modo      = modo_seleccion,
-      limpiar   = function() seleccion_r(NULL)
+      modo = modo_seleccion,
+      limpiar = function() seleccion_r(NULL)
     )
   })
 }
