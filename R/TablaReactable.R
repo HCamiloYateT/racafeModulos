@@ -76,20 +76,6 @@
   )
 }
 
-#' Genera JS de click en encabezado para sort server-side
-#' Solo emite la columna clicada; el toggle asc/desc lo resuelve R en sort_estado
-#' @keywords internal
-.js_header_sort <- function(sort_input_id, col_name) {
-  paste0(
-    "function(column) {",
-    "  Shiny.setInputValue('", sort_input_id, "', {",
-    "    col   : '", col_name, "',",
-    "    nonce : Math.random()",
-    "  }, {priority: 'event'});",
-    "}"
-  )
-}
-
 #' Genera nota de interaccion automatica con informacion de restricciones activas
 #' @keywords internal
 .nota_interaccion <- function(
@@ -228,45 +214,32 @@
   }
 }
 
-#' Aplica sort server-side manteniendo filas fijas siempre al final
-#' Separa filas normales de fijas, ordena solo las normales y las recombina
+#' Separa un dataframe en cuerpo (filas normales) y fijas (filas ancladas)
+#' Deteccion case-insensitive por valor en cualquier celda de la fila
 #' @keywords internal
-.aplicar_sort <- function(df, sort_col, sort_dir, filas_fijas_al_final) {
-  if (is.null(sort_col) || !sort_col %in% names(df)) return(df)
-
-  fijas_up <- toupper(trimws(as.character(filas_fijas_al_final %||% character(0))))
-
-  # Separar filas fijas detectando coincidencia en cualquier celda de la fila
-  if (length(fijas_up) > 0) {
-    es_fija <- vapply(
-      seq_len(nrow(df)),
-      function(i) {
-        vals <- toupper(trimws(as.character(unlist(df[i, , drop = TRUE]))))
-        any(vals %in% fijas_up)
-      },
-      logical(1L)
-    )
-    df_normal <- df[!es_fija, , drop = FALSE]
-    df_fijas  <- df[es_fija,  , drop = FALSE]
-  } else {
-    df_normal <- df
-    df_fijas  <- df[0, , drop = FALSE]
+.separar_filas <- function(df, filas_fijas_al_final) {
+  if (is.null(filas_fijas_al_final) || length(filas_fijas_al_final) == 0) {
+    return(list(cuerpo = df, fijas = df[0, , drop = FALSE]))
   }
 
-  # Ordenar solo filas normales; NAs siempre al final
-  col_vals <- df_normal[[sort_col]]
-  ord <- if (sort_dir == "desc") {
-    order(col_vals, decreasing = TRUE, na.last = TRUE)
-  } else {
-    order(col_vals, decreasing = FALSE, na.last = TRUE)
-  }
+  fijas_up <- toupper(trimws(as.character(filas_fijas_al_final)))
 
-  rbind(df_normal[ord, , drop = FALSE], df_fijas)
+  es_fija <- vapply(
+    seq_len(nrow(df)),
+    function(i) {
+      vals <- toupper(trimws(as.character(unlist(df[i, , drop = TRUE]))))
+      any(vals %in% fijas_up)
+    },
+    logical(1L)
+  )
+
+  list(
+    cuerpo = df[!es_fija, , drop = FALSE],
+    fijas  = df[es_fija,  , drop = FALSE]
+  )
 }
 
-#' Construye colDefs con header JS para sort server-side
-#' Cuando sortable = FALSE construye coldefs estaticos sin header interactivo
-#' El icono de direccion activa se muestra en el label del encabezado
+#' Construye colDefs por defecto con overrides parciales/completos
 #' @keywords internal
 .coldefs_default <- function(
     data,
@@ -274,10 +247,7 @@
     col_specs,
     id_col,
     col_header_n,
-    sortable_flag,
-    sort_input_id = NULL,
-    sort_col_actual = NULL,
-    sort_dir_actual = NULL
+    sortable_flag
 ) {
   nms            <- names(data)
   col_header_idx <- seq_len(col_header_n)
@@ -294,17 +264,6 @@
     list()
   }
 
-  # Construir label con icono de sort: activo muestra direccion, inactivo muestra neutro
-  .header_label <- function(label, col_name) {
-    if (!sortable_flag || is.null(sort_input_id)) return(label)
-    icono <- if (!is.null(sort_col_actual) && sort_col_actual == col_name) {
-      if (identical(sort_dir_actual, "asc")) " \u25b2" else " \u25bc"
-    } else {
-      " \u25b2\u25bc"
-    }
-    paste0(label, icono)
-  }
-
   defaults <- stats::setNames(
     lapply(seq_along(nms), function(i) {
       nm    <- nms[[i]]
@@ -312,29 +271,20 @@
 
       if (!is.null(id_col) && nm == id_col) return(reactable::colDef(show = FALSE))
 
-      extra_class  <- if (i %in% col_header_idx) "rt-col-header" else NULL
-      label        <- specs$label    %||% nm
-      formato      <- specs$formato  %||% "numero"
-      min_width    <- specs$min_width %||% NULL
-      max_width    <- specs$max_width %||% NULL
-      color_fn     <- specs$color_fn
-      alinear      <- specs$alinear  %||% NULL
-      header_label <- .header_label(label, nm)
-
-      # Header JS para captura de click de sort; NULL cuando sortable = FALSE
-      header_fn <- if (sortable_flag && !is.null(sort_input_id)) {
-        reactable::JS(.js_header_sort(sort_input_id, nm))
-      } else {
-        NULL
-      }
+      extra_class <- if (i %in% col_header_idx) "rt-col-header" else NULL
+      label     <- specs$label    %||% nm
+      formato   <- specs$formato  %||% "numero"
+      min_width <- specs$min_width %||% NULL
+      max_width <- specs$max_width %||% NULL
+      color_fn  <- specs$color_fn
+      alinear   <- specs$alinear  %||% NULL
 
       if (is.numeric(data[[nm]])) {
         fmt_fn <- .resolver_fmt_celda(formato)
         reactable::colDef(
-          name     = header_label,
-          header   = header_fn,
+          name     = label,
           class    = extra_class,
-          sortable = FALSE,
+          sortable = sortable_flag,
           minWidth = min_width,
           maxWidth = max_width,
           align    = alinear,
@@ -344,10 +294,9 @@
       } else if (inherits(data[[nm]], c("Date", "POSIXct", "POSIXlt"))) {
         fmt_fn <- .resolver_fmt_celda(specs$formato %||% "fecha")
         reactable::colDef(
-          name     = header_label,
-          header   = header_fn,
+          name     = label,
           class    = extra_class,
-          sortable = FALSE,
+          sortable = sortable_flag,
           minWidth = min_width,
           maxWidth = max_width,
           cell     = fmt_fn,
@@ -355,10 +304,9 @@
         )
       } else {
         reactable::colDef(
-          name     = header_label,
-          header   = header_fn,
+          name     = label,
           class    = extra_class,
-          sortable = FALSE,
+          sortable = sortable_flag,
           minWidth = min_width,
           maxWidth = max_width,
           align    = alinear,
@@ -478,6 +426,74 @@
   )
 }
 
+#' Construye un reactable para el cuerpo (filas ordenables, con encabezados)
+#' @keywords internal
+.build_reactable_cuerpo <- function(
+    df, coldefs, on_click, sortable, searchable, page_size, compact, modo_seleccion
+) {
+  reactable::reactable(
+    data            = df,
+    columns         = coldefs,
+    onClick         = on_click,
+    rowClass        = .js_row_class(),
+    sortable        = sortable,
+    highlight       = modo_seleccion != "ninguno",
+    searchable      = searchable,
+    defaultPageSize = page_size,
+    compact         = compact,
+    bordered        = TRUE,
+    striped         = FALSE,
+    language = reactable::reactableLang(
+      searchPlaceholder = "Buscar...",
+      noData            = "Sin resultados",
+      pageInfo          = "{rowStart}\u2013{rowEnd} de {rows} registros",
+      pagePrevious      = "Anterior",
+      pageNext          = "Siguiente"
+    ),
+    theme = reactable::reactableTheme(
+      headerStyle = list(
+        fontWeight = "600",
+        fontSize   = "12px",
+        cursor     = if (sortable) "pointer" else "default"
+      ),
+      cellStyle = list(
+        fontSize = "12px",
+        padding  = "3px 6px",
+        cursor   = if (modo_seleccion != "ninguno") "pointer" else "default"
+      )
+    )
+  )
+}
+
+#' Construye un reactable para las filas fijas (sin encabezados, sin sort, sin paginacion)
+#' Comparte el mismo onClick que el cuerpo para emitir al mismo input$click
+#' @keywords internal
+.build_reactable_fijas <- function(df, coldefs, on_click, modo_seleccion) {
+  # Ocultar nombres de columna en tabla de filas fijas para evitar doble encabezado
+  coldefs_sin_header <- lapply(coldefs, function(cd) {
+    cd$name <- "\u00a0"
+    cd
+  })
+
+  reactable::reactable(
+    data            = df,
+    columns         = coldefs_sin_header,
+    onClick         = on_click,
+    rowClass        = .js_row_class(),
+    sortable        = FALSE,
+    highlight       = modo_seleccion != "ninguno",
+    searchable      = FALSE,
+    defaultPageSize = nrow(df),
+    compact         = TRUE,
+    bordered        = TRUE,
+    striped         = FALSE,
+    theme = reactable::reactableTheme(
+      headerStyle = list(display = "none"),
+      cellStyle   = list(fontSize = "12px", padding = "3px 6px")
+    )
+  )
+}
+
 #' UI del modulo TablaReactable
 #'
 #' @param id ID del modulo Shiny.
@@ -517,7 +533,8 @@ TablaReactableUI <- function(
   shiny::tags$div(
     class = clases_contenedor,
     header_bloque,
-    reactable::reactableOutput(ns("tabla")),
+    reactable::reactableOutput(ns("tabla_cuerpo")),
+    shiny::uiOutput(ns("tabla_fijas_ui")),
     shiny::uiOutput(ns("nota_interaccion")),
     .footer_bloque(footer, footer_tipo),
     shiny::uiOutput(ns("badge_seleccion"))
@@ -527,9 +544,10 @@ TablaReactableUI <- function(
 #' Server del modulo TablaReactable
 #'
 #' Tabla reactable con seleccion configurable por fila, celda o columna.
-#' El sort es manejado en R (server-side) para garantizar que las filas
-#' definidas en `filas_fijas_al_final` siempre queden al final de la tabla
-#' independientemente del ordenamiento activo.
+#' Cuando `filas_fijas_al_final` tiene valores, renderiza dos reactables
+#' apilados: el cuerpo con sort nativo habilitado y una tabla inferior sin
+#' encabezados ni paginacion para las filas fijas, garantizando que estas
+#' siempre queden al final sin importar el ordenamiento del cuerpo.
 #'
 #' @param id ID del modulo Shiny.
 #' @param data `reactive()` que retorna un `data.frame`.
@@ -539,9 +557,9 @@ TablaReactableUI <- function(
 #' @param modo_seleccion `"fila"` | `"celda"` | `"columna"` | `"ninguno"`.
 #' @param id_col Columna identificadora primaria. `NULL` usa `row_index`.
 #' @param col_header_n Numero de columnas iniciales con clase `.rt-col-header`.
-#' @param sortable Habilita ordenamiento server-side por encabezado.
-#' @param searchable Habilita buscador global.
-#' @param page_size Filas por pagina.
+#' @param sortable Habilita ordenamiento nativo por encabezado en el cuerpo.
+#' @param searchable Habilita buscador global en el cuerpo.
+#' @param page_size Filas por pagina del cuerpo.
 #' @param compact Modo compacto.
 #' @param mostrar_badge Muestra resumen del ultimo click.
 #' @param modal_titulo_fn Funcion `function(sel)` para titulo del modal.
@@ -554,9 +572,10 @@ TablaReactableUI <- function(
 #' @param cols_activos Vector de columnas habilitadas para seleccion en JS.
 #' @param filas_bloqueadas Vector de valores bloqueados por fila en JS.
 #' @param filas_seleccionables Restriccion en R (`vector` de IDs o funcion).
-#' @param filas_fijas_al_final Vector de valores que siempre se anclan al final
-#'   de la tabla sin importar el ordenamiento activo. Case-insensitive, deteccion
-#'   por valor en cualquier celda de la fila. Default `c("OTROS", "TOTAL")`.
+#' @param filas_fijas_al_final Vector de valores que identifican filas a extraer
+#'   en una tabla independiente sin sort, siempre visible debajo del cuerpo.
+#'   Case-insensitive, deteccion por valor en cualquier celda de la fila.
+#'   Default `c("OTROS", "TOTAL")`. `NULL` desactiva la tabla secundaria.
 #'
 #' @return Lista con `seleccion` (reactive), `modo` (string) y `limpiar` (function).
 #' @export
@@ -592,38 +611,19 @@ TablaReactable <- function(
   cols_activos_json     <- .to_json_arr(cols_activos)
   filas_bloqueadas_json <- .to_json_arr(filas_bloqueadas)
   usar_modal            <- !is.null(modal_titulo_fn) && !is.null(modal_contenido_fn)
+  usar_tabla_fijas      <- !is.null(filas_fijas_al_final) && length(filas_fijas_al_final) > 0
 
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
-
-    # Estado de seleccion y estado de sort activo
     seleccion_r <- shiny::reactiveVal(NULL)
-    sort_estado <- shiny::reactiveVal(list(col = NULL, dir = "asc"))
 
-    # Captura de click en encabezado; toggle asc/desc calculado en R
-    shiny::observeEvent(input$sort_header, {
-      shiny::req(!is.null(input$sort_header))
-      col_nuevo <- input$sort_header[["col"]]
-      if (is.null(col_nuevo) || !nzchar(col_nuevo)) return()
-      st_actual <- sort_estado()
-      # Misma columna: invertir direccion; columna nueva: iniciar en asc
-      nueva_dir <- if (!is.null(st_actual$col) && st_actual$col == col_nuevo) {
-        if (identical(st_actual$dir, "asc")) "desc" else "asc"
-      } else {
-        "asc"
-      }
-      sort_estado(list(col = col_nuevo, dir = nueva_dir))
-    }, ignoreNULL = TRUE)
-
-    # Dataframe ordenado: sort en R garantiza filas fijas siempre al final
-    df_ordenado <- shiny::reactive({
+    # Particion reactiva del dataframe en cuerpo y filas fijas
+    particion_r <- shiny::reactive({
       shiny::req(data())
-      st <- sort_estado()
-      df <- data()
-      if (sortable && !is.null(st$col)) {
-        .aplicar_sort(df, st$col, st$dir, filas_fijas_al_final)
+      if (usar_tabla_fijas) {
+        .separar_filas(data(), filas_fijas_al_final)
       } else {
-        df
+        list(cuerpo = data(), fijas = data()[0, , drop = FALSE])
       }
     })
 
@@ -645,55 +645,65 @@ TablaReactable <- function(
       ninguno = NULL
     )
 
-    output$tabla <- reactable::renderReactable({
-      shiny::req(df_ordenado())
-      df <- df_ordenado()
-      st <- sort_estado()
-
-      # Coldefs con header JS para captura de sort e icono de direccion activa
+    # Tabla del cuerpo: sort nativo habilitado, sin filas fijas
+    output$tabla_cuerpo <- reactable::renderReactable({
+      df <- particion_r()$cuerpo
+      shiny::req(nrow(df) > 0 || !usar_tabla_fijas)
       coldefs <- .coldefs_default(
         data              = df,
         columnas_override = columnas,
         col_specs         = col_specs,
         id_col            = id_col,
         col_header_n      = col_header_n,
-        sortable_flag     = sortable,
-        sort_input_id     = if (sortable) ns("sort_header") else NULL,
-        sort_col_actual   = st$col,
-        sort_dir_actual   = st$dir
+        sortable_flag     = sortable
       )
+      .build_reactable_cuerpo(
+        df             = df,
+        coldefs        = coldefs,
+        on_click       = on_click,
+        sortable       = sortable,
+        searchable     = searchable,
+        page_size      = page_size,
+        compact        = compact,
+        modo_seleccion = modo_seleccion
+      )
+    })
 
-      reactable::reactable(
-        data            = df,
-        columns         = coldefs,
-        onClick         = on_click,
-        rowClass        = .js_row_class(),
-        sortable        = FALSE,
-        highlight       = modo_seleccion != "ninguno",
-        searchable      = searchable,
-        defaultPageSize = page_size,
-        compact         = compact,
-        bordered        = TRUE,
-        striped         = FALSE,
-        language = reactable::reactableLang(
-          searchPlaceholder = "Buscar...",
-          noData            = "Sin resultados",
-          pageInfo          = "{rowStart}\u2013{rowEnd} de {rows} registros",
-          pagePrevious      = "Anterior",
-          pageNext          = "Siguiente"
-        ),
-        theme = reactable::reactableTheme(
-          headerStyle = list(
-            fontWeight = "600",
-            fontSize   = "12px",
-            cursor     = if (sortable) "pointer" else "default"
-          ),
-          cellStyle = list(
-            fontSize = "12px",
-            padding  = "3px 6px",
-            cursor   = if (modo_seleccion != "ninguno") "pointer" else "default"
-          )
-        )
+    # Tabla de filas fijas: sin encabezados, sin sort, sin paginacion
+    output$tabla_fijas_ui <- shiny::renderUI({
+      shiny::req(usar_tabla_fijas)
+      df_fijas <- particion_r()$fijas
+      if (nrow(df_fijas) == 0) return(NULL)
+      df_cuerpo <- particion_r()$cuerpo
+      coldefs <- .coldefs_default(
+        data              = df_cuerpo,
+        columnas_override = columnas,
+        col_specs         = col_specs,
+        id_col            = id_col,
+        col_header_n      = col_header_n,
+        sortable_flag     = FALSE
+      )
+      reactable::reactableOutput(ns("tabla_fijas"))
+    })
+
+    output$tabla_fijas <- reactable::renderReactable({
+      shiny::req(usar_tabla_fijas)
+      df_fijas  <- particion_r()$fijas
+      df_cuerpo <- particion_r()$cuerpo
+      shiny::req(nrow(df_fijas) > 0)
+      coldefs <- .coldefs_default(
+        data              = df_cuerpo,
+        columnas_override = columnas,
+        col_specs         = col_specs,
+        id_col            = id_col,
+        col_header_n      = col_header_n,
+        sortable_flag     = FALSE
+      )
+      .build_reactable_fijas(
+        df             = df_fijas,
+        coldefs        = coldefs,
+        on_click       = on_click,
+        modo_seleccion = modo_seleccion
       )
     })
 
@@ -711,7 +721,7 @@ TablaReactable <- function(
     shiny::observeEvent(input$click, {
       shiny::req(!is.null(input$click))
 
-      # Normalizar contra data() original para mantener consistencia de IDs
+      # Normalizar contra data() completo para mantener consistencia de IDs
       sel <- .normalizar_seleccion(input$click, modo_seleccion, data(), id_col)
       if (is.null(sel)) return()
 
