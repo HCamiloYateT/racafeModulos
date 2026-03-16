@@ -236,7 +236,7 @@
           style = color_fn
         )
       } else {
-        reactable::colDef(
+        .col_def_texto(
           name = label,
           class = extra_class,
           sortable = sortable_flag,
@@ -244,8 +244,7 @@
           maxWidth = max_width,
           align = alinear,
           style = color_fn,
-          sortNALast = TRUE,
-          sortMethod = .js_sort_otros_total_last()
+          sortNALast = TRUE
         )
       }
     }),
@@ -259,6 +258,21 @@
   }
 
   defaults
+}
+
+
+#' @keywords internal
+.col_def_texto <- function(...) {
+  args <- list(...)
+  coldef_args <- names(formals(reactable::colDef))
+
+  if ("sortMethod" %in% coldef_args) {
+    args$sortMethod <- .js_sort_otros_total_last()
+  } else if ("sortType" %in% coldef_args) {
+    args$sortType <- .js_sort_otros_total_last()
+  }
+
+  do.call(reactable::colDef, args)
 }
 
 #' @keywords internal
