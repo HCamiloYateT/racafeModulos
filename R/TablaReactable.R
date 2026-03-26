@@ -134,6 +134,19 @@
   "tiempo", "kwh", "log"
 )
 
+#' @keywords internal
+.es_html_columna <- function(x) {
+  x_chr <- as.character(stats::na.omit(x))
+  if (length(x_chr) == 0) return(FALSE)
+  any(grepl("<[^>]+>", x_chr))
+}
+
+#' @keywords internal
+.render_html_celda <- function(v) {
+  if (is.na(v)) return("—")
+  htmltools::HTML(gsub("\n", "<br/>", as.character(v), fixed = TRUE))
+}
+
 #' Resuelve formateador de celda para reactable::colDef
 #' @keywords internal
 .resolver_fmt_celda <- function(formato) {
@@ -236,6 +249,7 @@
           style = color_fn
         )
       } else {
+        es_html <- .es_html_columna(data[[nm]])
         reactable::colDef(
           name = label,
           class = extra_class,
@@ -243,6 +257,8 @@
           minWidth = min_width,
           maxWidth = max_width,
           align = alinear,
+          html = es_html,
+          cell = if (es_html) .render_html_celda else NULL,
           style = color_fn
         )
       }
