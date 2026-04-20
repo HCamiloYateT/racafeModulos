@@ -1,180 +1,135 @@
 # TablaReactable helpers ----
 
-#' Operador interno para fallback de valores NULL
-#' @keywords internal
-`%||%` <- function(x, y) if (!is.null(x)) x else y
-
 #' Convierte un vector R en un arreglo JSON string para JS
 #' @keywords internal
-.to_json_arr <- function(v) {
-  if (is.null(v) || length(v) == 0) return("[]")
-  paste0('["', paste(as.character(v), collapse = '","'), '"]')
+.to_json_arr <- function(x) {
+  if (is.null(x) || length(x) == 0) return("[]")
+  paste0('["', paste(as.character(x), collapse = '","'), '"]')
 }
 
-#' Genera JS para click por fila
+#' Bloque footer con clase CSS segun tipo semantico
 #' @keywords internal
-.js_fila <- function(input_id, filas_bloqueadas_json = "[]") {
-  paste0(
-    "function(rowInfo) {",
-    "  var bloq = ", filas_bloqueadas_json, ";",
-    "  if (bloq.length > 0) {",
-    "    var vals = Object.values(rowInfo.values).map(function(v) {",
-    "      return String(v).trim().toUpperCase();",
-    "    });",
-    "    var bup = bloq.map(function(b) { return String(b).trim().toUpperCase(); });",
-    "    if (vals.some(function(v) { return bup.indexOf(v) >= 0; })) return;",
-    "  }",
-    "  Shiny.setInputValue('", input_id, "', {",
-    "    row_index : rowInfo.index,",
-    "    values    : rowInfo.values,",
-    "    nonce     : Math.random()",
-    "  }, {priority: 'event'});",
-    "}"
-  )
-}
-
-#' Genera JS para click por celda
-#' @keywords internal
-.js_celda <- function(input_id,
-                      cols_activos_json = "[]",
-                      filas_bloqueadas_json = "[]") {
-  paste0(
-    "function(rowInfo, colInfo) {",
-    "  var cols = ", cols_activos_json, ";",
-    "  if (cols.length > 0 && cols.indexOf(colInfo.id) < 0) return;",
-    "  var bloq = ", filas_bloqueadas_json, ";",
-    "  if (bloq.length > 0) {",
-    "    var vals = Object.values(rowInfo.values).map(function(v) {",
-    "      return String(v).trim().toUpperCase();",
-    "    });",
-    "    var bup = bloq.map(function(b) { return String(b).trim().toUpperCase(); });",
-    "    if (vals.some(function(v) { return bup.indexOf(v) >= 0; })) return;",
-    "  }",
-    "  Shiny.setInputValue('", input_id, "', {",
-    "    row_index : rowInfo.index,",
-    "    values    : rowInfo.values,",
-    "    col       : colInfo.id,",
-    "    valor     : rowInfo.values[colInfo.id],",
-    "    nonce     : Math.random()",
-    "  }, {priority: 'event'});",
-    "}"
-  )
-}
-
-#' Genera JS para click por columna
-#' @keywords internal
-.js_columna <- function(input_id, cols_activos_json = "[]") {
-  paste0(
-    "function(rowInfo, colInfo) {",
-    "  var cols = ", cols_activos_json, ";",
-    "  if (cols.length > 0 && cols.indexOf(colInfo.id) < 0) return;",
-    "  Shiny.setInputValue('", input_id, "', {",
-    "    col   : colInfo.id,",
-    "    nonce : Math.random()",
-    "  }, {priority: 'event'});",
-    "}"
-  )
-}
-
-#' Genera nota de interaccion automatica
-#' @keywords internal
-.nota_interaccion <- function(modo_seleccion, sortable) {
-  txt_modo <- switch(
-    modo_seleccion,
-    fila = "ℹ️  Clic en una fila para abrir su detalle.",
-    celda = paste0(
-      "ℹ️  Clic en una celda para ver su detalle;",
-      " el encabezado identifica la columna seleccionada."
-    ),
-    columna = "ℹ️  Clic en cualquier celda de una columna para explorar sus valores.",
-    ninguno = NULL
-  )
-
-  txt_orden <- if (sortable) {
-    "⇅  Clic en el encabezado de una columna para ordenar la tabla."
-  } else {
-    NULL
-  }
-
-  if (is.null(txt_modo) && is.null(txt_orden)) return(NULL)
-
-  lineas <- Filter(Negate(is.null), list(txt_modo, txt_orden))
-
-  shiny::tags$div(
-    class = "caja-modal-footer",
-    lapply(lineas, function(l) shiny::tags$div(l))
-  )
-}
-
-#' Construye bloque footer opcional
-#' @keywords internal
-.footer_bloque <- function(footer, footer_tipo) {
-  if (is.null(footer)) return(NULL)
-
-  css_class <- switch(
+.footer_bloque <- function(footer, footer_tipo = "info") {
+  if (is.null(footer) || !nzchar(as.character(footer))) return(NULL)
+  clase <- switch(
     footer_tipo,
-    info = "caja-modal-footer",
     warning = "caja-modal-footer-warning",
     dark = "caja-modal-footer-dark",
     danger = "caja-modal-footer-danger",
     "caja-modal-footer"
   )
-
-  if (inherits(footer, "shiny.tag") || inherits(footer, "shiny.tag.list")) {
-    shiny::tags$div(class = css_class, footer)
-  } else {
-    shiny::tags$div(class = css_class, as.character(footer))
-  }
+  shiny::tags$div(class = clase, footer)
 }
 
+#' Footer del modal: nota metodologica + boton cerrar
 #' @keywords internal
-.FORMATOS_RACAFE <- c(
-  "coma", "numero", "dinero", "dolares", "miles",
-  "porcentaje", "cientifico", "millones", "entero",
-  "tiempo", "kwh", "log"
-)
-
-#' @keywords internal
-.es_html_columna <- function(x) {
-  x_chr <- as.character(stats::na.omit(x))
-  if (length(x_chr) == 0) return(FALSE)
-  any(grepl("<[^>]+>", x_chr))
+.modal_footer_bloque <- function(footer, footer_tipo = "info") {
+  if (is.null(footer)) return(shiny::modalButton("Cerrar"))
+  shiny::tagList(.footer_bloque(footer, footer_tipo), shiny::modalButton("Cerrar"))
 }
 
+#' Titulo del modal con icono opcional
 #' @keywords internal
-.render_html_celda <- function(v) {
-  if (is.na(v)) return("—")
-  htmltools::HTML(gsub("\n", "<br/>", as.character(v), fixed = TRUE))
+.modal_titulo_tag <- function(sel, modal_titulo_fn, modal_icon) {
+  txt <- if (is.function(modal_titulo_fn)) modal_titulo_fn(sel) else "Detalle"
+  if (!is.null(modal_icon)) shiny::tagList(shiny::icon(modal_icon), txt) else txt
 }
 
-#' Resuelve formateador de celda para reactable::colDef
+#' Nota de interaccion automatica debajo de la tabla
 #' @keywords internal
-.resolver_fmt_celda <- function(formato) {
-  formato <- tolower(trimws(formato))
-
-  if (formato == "fecha") {
-    return(function(v) {
-      if (is.na(v)) return("—")
-      tryCatch(format(as.Date(v), "%d/%m/%Y"), error = function(e) as.character(v))
-    })
-  }
-
-  if (!formato %in% .FORMATOS_RACAFE) {
-    stop(paste0(
-      "TablaReactable col_specs: formato '", formato, "' no reconocido. ",
-      "Use uno de: ", paste(.FORMATOS_RACAFE, collapse = ", "), " o 'fecha'."
-    ))
-  }
-
-  formateador <- racafe::DefinirFormato(formato)
-
-  function(v) {
-    if (is.na(v)) return("—")
-    formateador(v)
-  }
+.nota_interaccion <- function(modo_seleccion, sortable) {
+  if (modo_seleccion == "ninguno" && !isTRUE(sortable)) return(NULL)
+  txts <- c(
+    if (modo_seleccion == "fila") "Clic en fila para seleccionar",
+    if (modo_seleccion == "celda") "Clic en celda para seleccionar",
+    if (modo_seleccion == "columna") "Clic en celda para capturar columna",
+    if (isTRUE(sortable)) "Encabezados ordenables"
+  )
+  shiny::tags$div(class = "caja-modal-footer", paste(txts, collapse = " • "))
 }
 
-#' Construye colDefs por defecto con overrides parciales/completos
+#' JS handler: click de fila; respeta lista de indices bloqueados
+#' @keywords internal
+.js_fila <- function(input_id, filas_bloqueadas_json = "[]") {
+  paste0(
+    "function(rowInfo){",
+    "var b=", filas_bloqueadas_json, ",i=String(rowInfo.index);",
+    "if(b.length&&b.indexOf(i)>=0)return;",
+    "Shiny.setInputValue('", input_id, "',",
+    "{modo:'fila',index:rowInfo.index,values:rowInfo.values},",
+    "{priority:'event'});}"
+  )
+}
+
+#' JS handler: click de celda; filtra columnas activas y filas bloqueadas
+#' @keywords internal
+.js_celda <- function(input_id, cols_activos_json = "[]", filas_bloqueadas_json = "[]") {
+  paste0(
+    "function(rowInfo,colInfo){",
+    "var a=", cols_activos_json, ",b=", filas_bloqueadas_json, ";",
+    "if(a.length&&a.indexOf(colInfo.id)<0)return;",
+    "if(b.length&&b.indexOf(String(rowInfo.index))>=0)return;",
+    "Shiny.setInputValue('", input_id, "',",
+    "{modo:'celda',index:rowInfo.index,col:colInfo.id,values:rowInfo.values},",
+    "{priority:'event'});}"
+  )
+}
+
+#' JS handler: click de columna; captura nombre de columna activa
+#' @keywords internal
+.js_columna <- function(input_id, cols_activos_json = "[]") {
+  paste0(
+    "function(rowInfo,colInfo){",
+    "var a=", cols_activos_json, ";",
+    "if(a.length&&a.indexOf(colInfo.id)<0)return;",
+    "Shiny.setInputValue('", input_id, "',",
+    "{modo:'columna',col:colInfo.id},{priority:'event'});}"
+  )
+}
+
+#' JS rowClass: asigna clase CSS a filas 'otros' y 'total' via .row_type
+#' @keywords internal
+.js_row_class <- function() {
+  reactable::JS(paste0(
+    "function(rowInfo){",
+    "var t=rowInfo.values['.row_type'];",
+    "if(t==='total')return 'rt-fila-total';",
+    "if(t==='otros')return 'rt-fila-otros';",
+    "return '';}"
+  ))
+}
+
+#' Ordena df manteniendo filas 'otros'/'total' siempre al fondo
+#' @keywords internal
+.ordenar_con_pin <- function(df, col = NULL, desc = FALSE) {
+  tiene_tipo <- ".row_type" %in% names(df)
+  if (!tiene_tipo) {
+    if (!is.null(col) && col %in% names(df)) {
+      return(df[order(df[[col]], decreasing = desc, na.last = TRUE), , drop = FALSE])
+    }
+    return(df)
+  }
+
+  mask_esp <- df$.row_type %in% c("otros", "total")
+  df_norm <- df[!mask_esp, , drop = FALSE]
+  df_esp <- df[mask_esp, , drop = FALSE]
+
+  if (!is.null(col) && col %in% names(df_norm) && col != ".row_type") {
+    df_norm <- df_norm[order(df_norm[[col]], decreasing = desc, na.last = TRUE), , drop = FALSE]
+  }
+
+  if (nrow(df_esp) > 0) {
+    df_esp <- df_esp[
+      order(match(df_esp$.row_type, c("otros", "total")), na.last = TRUE),
+      ,
+      drop = FALSE
+    ]
+  }
+
+  rbind(df_norm, df_esp)
+}
+
+#' Construye colDefs con sort R-side y headers custom; oculta .row_type
 #' @keywords internal
 .coldefs_default <- function(
     data,
@@ -182,200 +137,165 @@
     col_specs,
     id_col,
     col_header_n,
-    sortable_flag
+    sort_col = NULL,
+    sort_desc = FALSE,
+    ns_sort = NULL
 ) {
-  nms <- names(data)
-  col_header_idx <- seq_len(col_header_n)
-  col_specs <- col_specs %||% list()
+  nms_todos <- names(data)
+  nms_visibles <- if (!is.null(columnas_override)) columnas_override else nms_todos
+  nms_visibles <- nms_visibles[!nms_visibles %in% ".row_type"]
 
-  if (!is.list(col_specs)) {
-    col_specs <- as.list(col_specs)
-  }
-
-  normalizar_spec <- function(x) {
-    if (is.null(x)) return(list())
-    if (is.list(x)) return(x)
-
-    x_list <- as.list(x)
-    if (!is.null(names(x_list)) && any(nzchar(names(x_list)))) {
-      return(x_list)
-    }
-
-    if (length(x_list) == 1L && is.atomic(x)) {
-      return(list(formato = as.character(x[[1L]])))
-    }
-
-    list()
-  }
-
-  defaults <- stats::setNames(
-    lapply(seq_along(nms), function(i) {
-      nm <- nms[[i]]
-      specs <- normalizar_spec(col_specs[[nm]])
-
-      if (!is.null(id_col) && nm == id_col) {
-        return(reactable::colDef(show = FALSE))
-      }
-
-      extra_class <- if (i %in% col_header_idx) "rt-col-header" else NULL
-      label <- specs$label %||% nm
-      formato <- specs$formato %||% "numero"
-      min_width <- specs$min_width %||% NULL
-      max_width <- specs$max_width %||% NULL
-      color_fn <- specs$color_fn
-      alinear <- specs$alinear %||% NULL
-
-      if (is.numeric(data[[nm]])) {
-        fmt_fn <- .resolver_fmt_celda(formato)
-        reactable::colDef(
-          name = label,
-          class = extra_class,
-          sortable = sortable_flag,
-          minWidth = min_width,
-          maxWidth = max_width,
-          align = alinear,
-          cell = fmt_fn,
-          style = color_fn
-        )
-      } else if (inherits(data[[nm]], c("Date", "POSIXct", "POSIXlt"))) {
-        fmt_fn <- .resolver_fmt_celda(specs$formato %||% "fecha")
-        reactable::colDef(
-          name = label,
-          class = extra_class,
-          sortable = sortable_flag,
-          minWidth = min_width,
-          maxWidth = max_width,
-          cell = fmt_fn,
-          style = color_fn
-        )
-      } else {
-        es_html <- .es_html_columna(data[[nm]])
-        reactable::colDef(
-          name = label,
-          class = extra_class,
-          sortable = sortable_flag,
-          minWidth = min_width,
-          maxWidth = max_width,
-          align = alinear,
-          html = es_html,
-          cell = if (es_html) .render_html_celda else NULL,
-          style = color_fn
-        )
-      }
-    }),
-    nms
+  coldefs <- stats::setNames(
+    lapply(nms_todos, function(nm) reactable::colDef(show = FALSE)),
+    nms_todos
   )
 
-  if (!is.null(columnas_override)) {
-    for (nm in names(columnas_override)) {
-      defaults[[nm]] <- columnas_override[[nm]]
-    }
+  for (i in seq_along(nms_visibles)) {
+    local({
+      nm_i <- nms_visibles[[i]]
+      sc <- sort_col
+      sd <- sort_desc
+      nss <- ns_sort
+      cd <- if (!is.null(col_specs) && !is.null(col_specs[[nm_i]])) {
+        col_specs[[nm_i]]
+      } else {
+        reactable::colDef()
+      }
+
+      cd$sortable <- FALSE
+      if (i <= col_header_n) {
+        cd$class <- trimws(paste(if (!is.null(cd$class)) cd$class else "", "rt-col-header"))
+      }
+
+      if (!is.null(nss)) {
+        cd$header <- function(value) {
+          ind <- if (!is.null(sc) && nm_i == sc) {
+            shiny::tags$span(
+              if (sd) "▼" else "▲",
+              style = "font-size:9px;color:#d90429;margin-left:3px;vertical-align:middle;"
+            )
+          }
+
+          shiny::tags$div(
+            style = "cursor:pointer;display:inline-flex;align-items:center;gap:2px;",
+            onclick = sprintf(
+              "event.stopPropagation();Shiny.setInputValue('%s',{col:'%s'},{priority:'event'});",
+              nss,
+              nm_i
+            ),
+            value,
+            ind
+          )
+        }
+      }
+
+      coldefs[[nm_i]] <<- cd
+    })
   }
 
-  defaults
+  coldefs
 }
 
+#' Interpolacion heatmap azul claro a azul oscuro
 #' @keywords internal
-.js_row_class <- function() {
-  reactable::JS("function(rowInfo) {
-    var vals = Object.values(rowInfo.values).map(function(v) {
-      return String(v).trim().toUpperCase();
-    });
-    if (vals.some(function(v) { return v === 'TOTAL'; })) {
-      return 'rt-fila-total';
-    }
-    if (vals.some(function(v) { return v === 'OTROS'; })) {
-      return 'rt-fila-otros';
-    }
-    return '';
-  }")
-}
-
-#' @keywords internal
-.normalizar_seleccion <- function(click, modo, df, id_col) {
-  if (!is.list(click)) return(NULL)
-
-  row_index <- suppressWarnings(as.integer(click[["row_index"]]))
-  values <- click[["values"]]
-
-  switch(
-    modo,
-    fila = {
-      id_val <- if (!is.null(id_col) && !is.null(values)) values[[id_col]] else row_index
-      fila_df <- if (!is.null(id_col) && !is.null(id_val)) {
-        df[df[[id_col]] == id_val, , drop = FALSE]
-      } else if (!is.na(row_index)) {
-        df[row_index + 1L, , drop = FALSE]
-      } else {
-        df[0, , drop = FALSE]
-      }
-      list(modo = "fila", id = id_val, fila = fila_df)
-    },
-    celda = {
-      id_val <- if (!is.null(id_col) && !is.null(values)) values[[id_col]] else row_index
-      fila_df <- if (!is.null(id_col) && !is.null(id_val)) {
-        df[df[[id_col]] == id_val, , drop = FALSE]
-      } else if (!is.na(row_index)) {
-        df[row_index + 1L, , drop = FALSE]
-      } else {
-        df[0, , drop = FALSE]
-      }
-      list(
-        modo = "celda",
-        id = id_val,
-        col = click[["col"]],
-        valor = click[["valor"]],
-        fila = fila_df
-      )
-    },
-    columna = {
-      col <- click[["col"]]
-      list(
-        modo = "columna",
-        col = col,
-        data = if (!is.null(col) && col %in% names(df)) df[, col, drop = FALSE] else df[0, , drop = FALSE]
-      )
-    }
+.hm_bg <- function(n) {
+  sprintf(
+    "rgb(%d,%d,%d)",
+    as.integer(230L - n * 226L),
+    as.integer(241L - n * 197L),
+    as.integer(251L - n * 168L)
   )
 }
 
 #' @keywords internal
-.modal_titulo_tag <- function(sel, modal_titulo_fn, modal_icon) {
-  titulo_txt <- modal_titulo_fn(sel)
-  if (!is.null(modal_icon) && nzchar(modal_icon)) {
-    shiny::tagList(shiny::icon(modal_icon), " ", titulo_txt)
-  } else {
-    titulo_txt
+.hm_txt <- function(n) if (n > 0.55) "#E6F1FB" else "#042C53"
+
+#' Inyecta estilo heatmap en colDef
+#' @keywords internal
+.overlay_heatmap <- function(cd, col_vals) {
+  rng <- range(col_vals, na.rm = TRUE)
+  if (!is.finite(diff(rng)) || diff(rng) == 0) return(cd)
+  mn <- rng[1]
+  mx <- rng[2]
+
+  cd$style <- function(value) {
+    if (!is.numeric(value) || is.na(value)) return(list())
+    n <- (value - mn) / (mx - mn)
+    list(background = .hm_bg(n), color = .hm_txt(n), fontWeight = "500")
   }
+
+  cd
+}
+
+#' Inyecta color positivo/negativo en colDef segun umbral
+#' @keywords internal
+.overlay_valor_color <- function(cd, umbral = 0) {
+  u <- umbral
+  cd$style <- function(value) {
+    if (!is.numeric(value) || is.na(value)) return(list())
+    if (value > u) return(list(color = "#3B6D11", fontWeight = "500"))
+    if (value < u) return(list(color = "#A32D2D", fontWeight = "500"))
+    list(color = "inherit")
+  }
+  cd
+}
+
+#' Resuelve columnas de estilo desde spec
+#' @keywords internal
+.resolver_cols_estilo <- function(spec, df) {
+  if (is.null(spec)) return(character(0))
+  if (identical(spec, "auto")) return(names(df)[vapply(df, is.numeric, logical(1))])
+  intersect(as.character(spec), names(df))
 }
 
 #' @keywords internal
-.modal_footer_bloque <- function(modal_footer, modal_footer_tipo) {
-  botones <- shiny::tagList(shiny::modalButton("Cerrar"))
+.aplicar_heatmap <- function(coldefs, cols, df) {
+  for (col in cols) {
+    base <- if (!is.null(coldefs[[col]])) coldefs[[col]] else reactable::colDef()
+    coldefs[[col]] <- .overlay_heatmap(base, df[[col]])
+  }
+  coldefs
+}
 
-  if (is.null(modal_footer)) return(botones)
+#' @keywords internal
+.aplicar_valor_color <- function(coldefs, cols, umbral = 0) {
+  for (col in cols) {
+    base <- if (!is.null(coldefs[[col]])) coldefs[[col]] else reactable::colDef()
+    coldefs[[col]] <- .overlay_valor_color(base, umbral)
+  }
+  coldefs
+}
 
-  css <- switch(
-    modal_footer_tipo,
-    info = "caja-modal-footer",
-    warning = "caja-modal-footer-warning",
-    dark = "caja-modal-footer-dark",
-    danger = "caja-modal-footer-danger",
-    "caja-modal-footer"
-  )
+#' Normaliza payload JS a estructura estandar de seleccion R
+#' @keywords internal
+.normalizar_seleccion <- function(click, modo_seleccion, df, id_col) {
+  if (is.null(click)) return(NULL)
+  if (click$modo == "columna") return(list(modo = "columna", col = click$col))
 
-  shiny::tagList(
-    shiny::tags$div(
-      class = css,
-      if (inherits(modal_footer, "shiny.tag") ||
-          inherits(modal_footer, "shiny.tag.list")) {
-        modal_footer
-      } else {
-        as.character(modal_footer)
-      }
-    ),
-    botones
-  )
+  idx <- as.integer(click$index) + 1L
+  if (is.na(idx) || idx < 1L || idx > nrow(df)) return(NULL)
+
+  fila_data <- as.list(df[idx, , drop = FALSE])
+  id_val <- if (!is.null(id_col) && id_col %in% names(df)) df[[id_col]][idx] else idx
+
+  if (click$modo == "fila") {
+    return(list(modo = "fila", id = id_val, index = idx, fila = fila_data))
+  }
+
+  if (click$modo == "celda") {
+    col_nm <- click$col
+    valor <- if (!is.null(col_nm) && col_nm %in% names(df)) df[[col_nm]][idx] else NA
+    return(list(
+      modo = "celda",
+      id = id_val,
+      col = col_nm,
+      valor = valor,
+      index = idx,
+      fila = fila_data
+    ))
+  }
+
+  NULL
 }
 
 #' UI del modulo TablaReactable
@@ -387,6 +307,7 @@
 #' @param footer_tipo Estilo del footer: `"info"` | `"warning"` | `"dark"` | `"danger"`.
 #' @param sortable Activar estilos de encabezado ordenable. Debe coincidir con el server.
 #' @param mostrar_nota Mostrar nota de interaccion debajo de la tabla.
+#' @param estilo Estilo visual de la tabla.
 #'
 #' @return `shiny.tag` contenedor con `reactableOutput`, nota y badge.
 #' @export
@@ -397,13 +318,16 @@ TablaReactableUI <- function(
     footer = NULL,
     footer_tipo = c("info", "warning", "dark", "danger"),
     sortable = TRUE,
-    mostrar_nota = TRUE
+    mostrar_nota = TRUE,
+    estilo = c("analitica", "minimal", "striped", "financial", "accent", "ghost")
 ) {
   ns <- shiny::NS(id)
   footer_tipo <- match.arg(footer_tipo)
+  estilo <- match.arg(estilo)
 
   clases_contenedor <- trimws(paste(
     "rt-contenedor reactable-wrap",
+    paste0("rt-estilo-", estilo),
     if (sortable) "rt-sortable" else ""
   ))
 
@@ -428,18 +352,14 @@ TablaReactableUI <- function(
 
 #' Server del modulo TablaReactable
 #'
-#' Tabla reactable con seleccion configurable por fila, celda o columna.
-#' Retorna una seleccion normalizada y opcionalmente abre un modal integrado.
-#'
 #' @param id ID del modulo Shiny.
 #' @param data `reactive()` que retorna un `data.frame`.
-#' @param columnas `list()` de `reactable::colDef` para override completo selectivo.
-#' @param col_specs Named list con `label`, `formato`, `min_width`, `max_width`,
-#'   `color_fn`, `alinear` por columna.
+#' @param columnas Vector de columnas visibles. Si `NULL`, usa todas.
+#' @param col_specs Named list con overrides de `reactable::colDef` por columna.
 #' @param modo_seleccion `"fila"` | `"celda"` | `"columna"` | `"ninguno"`.
 #' @param id_col Columna identificadora primaria. `NULL` usa `row_index`.
 #' @param col_header_n Numero de columnas iniciales con clase `.rt-col-header`.
-#' @param sortable Habilita ordenamiento por encabezado.
+#' @param sortable Habilita ordenamiento por encabezado (R-side).
 #' @param searchable Habilita buscador global.
 #' @param page_size Filas por pagina.
 #' @param compact Modo compacto.
@@ -453,8 +373,11 @@ TablaReactableUI <- function(
 #' @param modal_footer Footer adicional del modal.
 #' @param modal_footer_tipo Estilo del footer del modal.
 #' @param cols_activos Vector de columnas habilitadas para seleccion en JS.
-#' @param filas_bloqueadas Vector de valores bloqueados por fila en JS.
+#' @param filas_bloqueadas Vector de indices bloqueados en JS.
 #' @param filas_seleccionables Restriccion en R (`vector` de IDs o funcion).
+#' @param cols_heatmap Columnas para overlay heatmap (`NULL`, `"auto"` o vector).
+#' @param cols_valor_color Columnas para color positivo/negativo (`NULL`, `"auto"` o vector).
+#' @param umbral_valor_color Umbral para `cols_valor_color`.
 #'
 #' @return Lista con `seleccion` (reactive), `modo` (string) y `limpiar` (function).
 #' @export
@@ -481,7 +404,10 @@ TablaReactable <- function(
     modal_footer_tipo = c("info", "warning", "dark", "danger"),
     cols_activos = NULL,
     filas_bloqueadas = NULL,
-    filas_seleccionables = NULL
+    filas_seleccionables = NULL,
+    cols_heatmap = NULL,
+    cols_valor_color = NULL,
+    umbral_valor_color = 0
 ) {
   modo_seleccion <- match.arg(modo_seleccion)
   modal_footer_tipo <- match.arg(modal_footer_tipo)
@@ -494,36 +420,64 @@ TablaReactable <- function(
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     seleccion_r <- shiny::reactiveVal(NULL)
+    sort_state_r <- shiny::reactiveVal(list(col = NULL, desc = FALSE))
+
+    shiny::observeEvent(input$sort_click, {
+      shiny::req(!is.null(input$sort_click$col))
+      cur <- sort_state_r()
+      nueva_col <- input$sort_click$col
+      nueva_desc <- if (!is.null(cur$col) && cur$col == nueva_col) !cur$desc else FALSE
+      sort_state_r(list(col = nueva_col, desc = nueva_desc))
+    })
+
+    df_sorted_r <- shiny::reactive({
+      srt <- sort_state_r()
+      .ordenar_con_pin(data(), srt$col, isTRUE(srt$desc))
+    })
 
     on_click <- switch(
       modo_seleccion,
-      fila = reactable::JS(.js_fila(ns("click"), filas_bloqueadas_json = filas_bloqueadas_json)),
+      fila = reactable::JS(.js_fila(
+        ns("click"), filas_bloqueadas_json = filas_bloqueadas_json
+      )),
       celda = reactable::JS(.js_celda(
         ns("click"),
         cols_activos_json = cols_activos_json,
         filas_bloqueadas_json = filas_bloqueadas_json
       )),
-      columna = reactable::JS(.js_columna(ns("click"), cols_activos_json = cols_activos_json)),
+      columna = reactable::JS(.js_columna(
+        ns("click"), cols_activos_json = cols_activos_json
+      )),
       ninguno = NULL
     )
 
     output$tabla <- reactable::renderReactable({
       shiny::req(data())
-      df <- data()
+      df <- df_sorted_r()
+      srt <- sort_state_r()
+
       coldefs <- .coldefs_default(
         data = df,
         columnas_override = columnas,
         col_specs = col_specs,
         id_col = id_col,
         col_header_n = col_header_n,
-        sortable_flag = sortable
+        sort_col = srt$col,
+        sort_desc = isTRUE(srt$desc),
+        ns_sort = if (isTRUE(sortable)) ns("sort_click") else NULL
       )
+
+      cols_hm <- .resolver_cols_estilo(cols_heatmap, df)
+      coldefs <- .aplicar_heatmap(coldefs, cols_hm, df)
+      cols_vc <- .resolver_cols_estilo(cols_valor_color, df)
+      coldefs <- .aplicar_valor_color(coldefs, cols_vc, umbral_valor_color)
+
       reactable::reactable(
         data = df,
         columns = coldefs,
         onClick = on_click,
         rowClass = .js_row_class(),
-        sortable = sortable,
+        sortable = FALSE,
         highlight = modo_seleccion != "ninguno",
         searchable = searchable,
         defaultPageSize = page_size,
@@ -538,11 +492,7 @@ TablaReactable <- function(
           pageNext = "Siguiente"
         ),
         theme = reactable::reactableTheme(
-          headerStyle = list(
-            fontWeight = "600",
-            fontSize = "12px",
-            cursor = if (sortable) "pointer" else "default"
-          ),
+          headerStyle = list(fontWeight = "600", fontSize = "12px"),
           cellStyle = list(
             fontSize = "12px",
             padding = "3px 6px",
@@ -559,7 +509,7 @@ TablaReactable <- function(
 
     shiny::observeEvent(input$click, {
       shiny::req(!is.null(input$click))
-      sel <- .normalizar_seleccion(input$click, modo_seleccion, data(), id_col)
+      sel <- .normalizar_seleccion(input$click, modo_seleccion, df_sorted_r(), id_col)
       if (is.null(sel)) return()
 
       if (!is.null(filas_seleccionables) && sel$modo %in% c("fila", "celda")) {
