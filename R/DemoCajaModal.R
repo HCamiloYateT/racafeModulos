@@ -99,6 +99,15 @@ DemoCajaModal <- function() {
   # Modulo ModTablaFiltrable ----
   # Reactable con filtros de estado y asesor sincronizados desde el padre
 
+  #' UI del modulo interno ModTablaFiltrable
+  #'
+  #' Renderiza controles de filtro (estado y asesor), la tabla reactable y un
+  #' bloque de resumen para la demo de [DemoCajaModal()].
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #'
+  #' @return `tagList` con filtros y salidas UI del modulo.
+  #' @keywords internal
   ModTablaFiltrableUI <- function(id) {
     ns <- NS(id)
     tagList(
@@ -117,6 +126,18 @@ DemoCajaModal <- function() {
     )
   }
 
+  #' Server del modulo interno ModTablaFiltrable
+  #'
+  #' Sincroniza filtros desde reactivos del padre y aplica filtrado sobre
+  #' `data()` para renderizar la tabla de clientes y su resumen de conteo.
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #' @param data Reactive que retorna el `data.frame` base de clientes.
+  #' @param estado_r Reactive con estado inicial/externo seleccionado.
+  #' @param asesor_r Reactive con asesor inicial/externo seleccionado.
+  #'
+  #' @return Nada (side-effects de `moduleServer`).
+  #' @keywords internal
   ModTablaFiltrable <- function(id, data, estado_r = reactive(""), asesor_r = reactive("")) {
     moduleServer(id, function(input, output, session) {
       observe({ updateSelectInput(session, "sel_estado", selected = estado_r()) })
@@ -143,6 +164,15 @@ DemoCajaModal <- function() {
   # Modulo ModGraficoPlotly ----
   # Barras de sacos por asesor con opacidad diferencial por segmento
 
+  #' UI del modulo interno ModGraficoPlotly
+  #'
+  #' Crea controles para seleccionar segmento resaltado y una salida
+  #' `plotlyOutput` con barras apiladas por asesor.
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #'
+  #' @return `tagList` con selector y grafico.
+  #' @keywords internal
   ModGraficoPlotlyUI <- function(id) {
     ns <- NS(id)
     tagList(
@@ -159,6 +189,17 @@ DemoCajaModal <- function() {
     )
   }
 
+  #' Server del modulo interno ModGraficoPlotly
+  #'
+  #' Agrupa datos por asesor y segmento, calcula opacidad condicional segun el
+  #' segmento seleccionado y renderiza el grafico de barras apiladas.
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #' @param data Reactive que retorna el `data.frame` base.
+  #' @param segmento_r Reactive con segmento inicial/externo a resaltar.
+  #'
+  #' @return Nada (side-effects de `moduleServer`).
+  #' @keywords internal
   ModGraficoPlotly <- function(id, data, segmento_r = reactive("")) {
     moduleServer(id, function(input, output, session) {
       observe({ updateSelectInput(session, "sel_seg", selected = segmento_r()) })
@@ -201,6 +242,15 @@ DemoCajaModal <- function() {
   # Modulo ModTablaGt ----
   # Tabla gt con top N clientes por margen y fondo condicional por segmento
 
+  #' UI del modulo interno ModTablaGt
+  #'
+  #' Incluye un control numerico para seleccionar top N por margen y una salida
+  #' `gt_output` para mostrar la tabla resultante.
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #'
+  #' @return `tagList` con controles y salida de tabla `gt`.
+  #' @keywords internal
   ModTablaGtUI <- function(id) {
     ns <- NS(id)
     tagList(
@@ -217,6 +267,17 @@ DemoCajaModal <- function() {
     )
   }
 
+  #' Server del modulo interno ModTablaGt
+  #'
+  #' Calcula el top N por margen desde `data()` y renderiza una tabla `gt` con
+  #' formato numerico y estilos condicionales por segmento.
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #' @param data Reactive que retorna el `data.frame` base.
+  #' @param top_n_r Reactive con valor inicial/externo del top N.
+  #'
+  #' @return Nada (side-effects de `moduleServer`).
+  #' @keywords internal
   ModTablaGt <- function(id, data, top_n_r = reactive(10L)) {
     moduleServer(id, function(input, output, session) {
       observe({ updateNumericInput(session, "top_n", value = top_n_r()) })
@@ -268,6 +329,15 @@ DemoCajaModal <- function() {
   # Modulo ModFormulario ----
   # Formulario de filtros con resumen de confirmacion reactivo
 
+  #' UI del modulo interno ModFormulario
+  #'
+  #' Renderiza el formulario de filtros (segmento, asesor y rangos) y el bloque
+  #' de resumen confirmado para la demo de [DemoCajaModal()].
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #'
+  #' @return `tagList` con formulario y salida de resumen.
+  #' @keywords internal
   ModFormularioUI <- function(id) {
     ns <- NS(id)
     tagList(
@@ -295,6 +365,17 @@ DemoCajaModal <- function() {
     )
   }
 
+  #' Server del modulo interno ModFormulario
+  #'
+  #' Sincroniza lista de asesores desde el padre y almacena un resumen
+  #' confirmado en `reactiveVal` al presionar el boton de confirmacion.
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #' @param asesores_r Reactive con asesores disponibles para el selector.
+  #' @param segmentos_r Reactive con segmentos disponibles.
+  #'
+  #' @return Nada (side-effects de `moduleServer`).
+  #' @keywords internal
   ModFormulario <- function(id, asesores_r = reactive(character(0)),
                             segmentos_r = reactive(character(0))) {
     moduleServer(id, function(input, output, session) {

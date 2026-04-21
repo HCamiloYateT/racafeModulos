@@ -100,9 +100,28 @@ DemoTablaReactable <- function() {
   # MODULO AUXILIAR: KPIs de fila en modal ----
   
   # UI: delega render a uiOutput interno
+  #' UI del modulo interno de detalle de fila
+  #'
+  #' Crea un `uiOutput` namespaced para renderizar los KPIs de la fila
+  #' seleccionada dentro de un modal.
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #'
+  #' @return `shiny.tag` con `uiOutput` del modulo.
+  #' @keywords internal
   .DetalleFilaUI <- function(id) shiny::uiOutput(shiny::NS(id)("contenido"))
   
   # Server: construye KPIs desde reactivo fila_r
+  #' Server del modulo interno de detalle de fila
+  #'
+  #' Recibe una fila reactiva y renderiza un bloque de KPIs resumidos
+  #' (creditos, cartera y mora) para mostrar en modal.
+  #'
+  #' @param id String. ID del modulo Shiny.
+  #' @param fila_r Reactive que retorna la fila seleccionada.
+  #'
+  #' @return Nada (side-effects de `moduleServer`).
+  #' @keywords internal
   .DetalleFila <- function(id, fila_r) {
     shiny::moduleServer(id, function(input, output, session) {
       output$contenido <- shiny::renderUI({
@@ -450,6 +469,15 @@ DemoTablaReactable <- function() {
   
   # SERVER ----
   
+  #' Server de la app demo de TablaReactable
+  #'
+  #' Inicializa todos los escenarios de interaccion de la demo:
+  #' visualizacion, seleccion por fila/celda y accion explicita por boton.
+  #'
+  #' @param input,output,session Parametros estandar de servidor Shiny.
+  #'
+  #' @return Nada (side-effects de `shinyServer`).
+  #' @keywords internal
   server <- function(input, output, session) {
     
     # Tab 1: solo visualizacion, sin seleccion ----
