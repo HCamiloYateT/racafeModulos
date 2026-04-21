@@ -1,4 +1,6 @@
 DemoTablaReactable <- function() {
+  # Dependencia explicita para ejecucion interactiva de la demo
+  library(shiny)
   
   # DATOS ----
   
