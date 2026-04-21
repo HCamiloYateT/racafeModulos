@@ -1,3 +1,25 @@
+#' DemoTablaReactable: app de demostracion del modulo TablaReactable
+#'
+#' Ejecuta una aplicacion Shiny autocontenida que recorre escenarios de uso
+#' comunes de [TablaReactable()]:
+#' \itemize{
+#'   \item Estilos `minimal` y `minimal2`.
+#'   \item Seleccion por fila con modal integrado.
+#'   \item Seleccion por celda y columna.
+#'   \item Acciones explicitas con boton embebido en celda.
+#' }
+#'
+#' Esta demo incluye bloques colapsables con codigo de referencia para UI y
+#' server, utiles para acelerar integraciones en aplicaciones reales.
+#'
+#' @return Ejecuta `shiny::shinyApp()` (sin valor de retorno).
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' DemoTablaReactable()
+#' }
+
 DemoTablaReactable <- function() {
   # Dependencia explicita para ejecucion interactiva de la demo
   library(shiny)
