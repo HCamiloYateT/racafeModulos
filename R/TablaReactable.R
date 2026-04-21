@@ -307,7 +307,7 @@
 #' @param footer_tipo Estilo del footer: `"info"` | `"warning"` | `"dark"` | `"danger"`.
 #' @param sortable Activar estilos de encabezado ordenable. Debe coincidir con el server.
 #' @param mostrar_nota Mostrar nota de interaccion debajo de la tabla.
-#' @param estilo Estilo visual de la tabla.
+#' @param estilo Estilo visual de la tabla: `"minimal"` o `"minimal2"`.
 #'
 #' @return `shiny.tag` contenedor con `reactableOutput`, nota y badge.
 #' @export
@@ -319,7 +319,7 @@ TablaReactableUI <- function(
     footer_tipo = c("info", "warning", "dark", "danger"),
     sortable = TRUE,
     mostrar_nota = TRUE,
-    estilo = c("analitica", "minimal", "striped", "financial", "accent", "ghost")
+    estilo = c("minimal", "minimal2")
 ) {
   ns <- shiny::NS(id)
   footer_tipo <- match.arg(footer_tipo)
