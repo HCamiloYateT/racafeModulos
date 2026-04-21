@@ -300,6 +300,10 @@
 
 #' UI del modulo TablaReactable
 #'
+#' Componente de interfaz para renderizar una tabla `reactable` con header
+#' opcional (titulo/subtitulo), nota de interaccion, footer semantico y badge
+#' reactivo de seleccion.
+#'
 #' @param id ID del modulo Shiny.
 #' @param titulo Titulo principal. `NULL` para omitir.
 #' @param subtitulo Subtitulo secundario. `NULL` para omitir.
@@ -311,6 +315,14 @@
 #'
 #' @return `shiny.tag` contenedor con `reactableOutput`, nota y badge.
 #' @export
+#'
+#' @examples
+#' TablaReactableUI(
+#'   id = "tabla_ventas",
+#'   titulo = "Ventas por segmento",
+#'   subtitulo = "Haz clic para ver detalle",
+#'   estilo = "minimal2"
+#' )
 TablaReactableUI <- function(
     id,
     titulo = NULL,
@@ -352,6 +364,10 @@ TablaReactableUI <- function(
 
 #' Server del modulo TablaReactable
 #'
+#' Renderiza una `reactable` con seleccion normalizada para consumo en el
+#' modulo padre. Opcionalmente dispara un modal con contenido custom y soporta
+#' estilos condicionales por columna (heatmap y color por umbral).
+#'
 #' @param id ID del modulo Shiny.
 #' @param data `reactive()` que retorna un `data.frame`.
 #' @param columnas Vector de columnas visibles. Si `NULL`, usa todas.
@@ -379,8 +395,25 @@ TablaReactableUI <- function(
 #' @param cols_valor_color Columnas para color positivo/negativo (`NULL`, `"auto"` o vector).
 #' @param umbral_valor_color Umbral para `cols_valor_color`.
 #'
-#' @return Lista con `seleccion` (reactive), `modo` (string) y `limpiar` (function).
+#' @return Lista con:
+#' * `seleccion`: `reactive()` con lista normalizada (`modo`, `id`, `fila`, etc.).
+#' * `modo`: string con el modo activo de seleccion.
+#' * `limpiar`: funcion para resetear seleccion y badge.
 #' @export
+#'
+#' @examples
+#' # En UI:
+#' # TablaReactableUI("tabla_demo", titulo = "Clientes")
+#' #
+#' # En server:
+#' # out <- TablaReactable(
+#' #   id = "tabla_demo",
+#' #   data = reactive(df_clientes),
+#' #   modo_seleccion = "fila",
+#' #   id_col = "cliente_id",
+#' #   modal_titulo_fn = function(sel) paste("Detalle", sel$id),
+#' #   modal_contenido_fn = function(sel) shiny::tags$pre(str(sel))
+#' # )
 TablaReactable <- function(
     id,
     data,
