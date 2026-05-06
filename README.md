@@ -20,12 +20,10 @@ devtools::install_github("HCamiloYateT/racafeModulos")
 
 ## Estructura del paquete
 
-- `R/CajaModal.R`: módulo KPI tipo `bs4ValueBox` con modal opcional.
-- `R/TablaReactable.R`: helpers internos y primera versión del módulo de tabla interactiva.
-- `R/TablaReactable2.R`: variante de tabla con UI mínima y header/footer renderizados desde server.
-- `R/DropdownMenuPlusModule.R`: wrapper modular y reactivo para `racafe::dropdownMenuPlus()`.
-- `R/html_helpers.R`: helpers de formato HTML para valores y textos.
-- `R/Demo*.R`: aplicaciones Shiny autocontenidas para validar escenarios de integración.
+- `R/CajaModal.R`: módulo KPI tipo `bs4ValueBox` con helpers HTML, UI, server y `DemoCajaModal()` en un único script.
+- `R/TablaReactable.R`: helpers internos, UI, server y `DemoTablaReactable()` en un único script.
+- `R/TablaReactable2.R`: variante de tabla con UI mínima, server y `DemoTablaReactable2()` en un único script.
+- `R/DropdownMenuPlusModule.R`: wrapper modular reactivo con UI, server y `DemoDropdownMenuPlus()` en un único script.
 
 ## Funciones exportadas
 
