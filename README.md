@@ -1,6 +1,6 @@
 # racafeModulos
 
-Colección de módulos Shiny reutilizables para ecosistemas analíticos corporativos. El paquete agrupa componentes listos para dashboards `bs4Dash`: cajas KPI con modal, tablas `reactable` con selección normalizada y dropdowns de navegación reactivos.
+Colección de módulos Shiny reutilizables para ecosistemas analíticos corporativos. El paquete agrupa componentes listos para dashboards `bs4Dash`: cajas KPI con modal, tablas `reactable` con selección normalizada y menús de navegación reactivos.
 
 ## Instalación
 
@@ -23,7 +23,7 @@ devtools::install_github("HCamiloYateT/racafeModulos")
 - `R/CajaModal.R`: módulo KPI tipo `bs4ValueBox` con helpers HTML, UI, server y `DemoCajaModal()` en un único script.
 - `R/TablaReactable.R`: helpers internos, UI, server y `DemoTablaReactable()` en un único script.
 - `R/TablaReactable2.R`: variante de tabla con UI mínima, server y `DemoTablaReactable2()` en un único script.
-- `R/DropdownMenuPlusModule.R`: wrapper modular reactivo con UI, server y `DemoDropdownMenuPlus()` en un único script.
+- `R/MenuHeader.R`: módulo para dropdowns de navbar con badge, contenido flexible y `DemoMenuHeader()` en un único script.
 
 ## Funciones exportadas
 
@@ -37,8 +37,8 @@ devtools::install_github("HCamiloYateT/racafeModulos")
 | `TablaReactable()` | Server de tabla con selección por fila/celda/columna, modal integrado y estilos condicionales. |
 | `TablaReactable2UI()` | UI mínima de tabla; título, subtítulo, footer y nota se renderizan desde server. |
 | `TablaReactable2()` | Variante de `TablaReactable()` orientada a configuración reactiva completa desde server, incluyendo `col_labels`. |
-| `dropdownMenuPlusUI()` | Placeholder `uiOutput` para ubicar un dropdown en `leftUi` o `rightUi` de un navbar. |
-| `dropdownMenuPlusServer()` | Server reactivo que renderiza `racafe::dropdownMenuPlus()` con items, badge, header y estado dinámicos. |
+| `MenuHeaderUI()` | UI de dropdown para navbar `bs4Dash` con badge y panel de contenido. |
+| `MenuHeaderServer()` | Server reactivo que despacha contenido desde `data.frame`, lista de tags o tags Shiny y expone selección. |
 
 ### Helpers
 
@@ -54,7 +54,7 @@ devtools::install_github("HCamiloYateT/racafeModulos")
 | `DemoCajaModal()` | App de demostración con variantes de uso de `CajaModal`. |
 | `DemoTablaReactable()` | App de demostración autocontenida para `TablaReactable`. |
 | `DemoTablaReactable2()` | App integral para validar UI mínima, headers reactivos, `col_labels`, selección y modales en `TablaReactable2`. |
-| `DemoDropdownMenuPlus()` | App autocontenida para probar dropdowns estáticos, tipificados y reactivos. |
+| `DemoMenuHeader()` | App autocontenida para probar `MenuHeader` con data frame, lista de tags y tabla embebida. |
 
 ## CajaModal
 
@@ -177,23 +177,23 @@ TablaReactable2(
 )
 ```
 
-## DropdownMenuPlus
+## MenuHeader
 
-`dropdownMenuPlusUI()` + `dropdownMenuPlusServer()` permiten ubicar un menú desplegable reactivo dentro del navbar de `bs4Dash`. El server delega el renderizado visual a `racafe::dropdownMenuPlus()` y resuelve automáticamente valores estáticos o `reactive()` para items, conteos, badge y header.
+`MenuHeaderUI()` + `MenuHeaderServer()` permiten ubicar un menú desplegable reactivo dentro del navbar de `bs4Dash`. El módulo renderiza badge, header, contenido y footer propios, y despacha el contenido según el tipo recibido: `data.frame`, lista de tags, `shiny.tag`, `shiny.tag.list` o `NULL`.
 
 ```r
 # UI, por ejemplo dentro de bs4DashNavbar(rightUi = ...)
-dropdownMenuPlusUI("menu_alertas")
+MenuHeaderUI("menu_segmentos", icon = shiny::icon("layer-group"))
 
 # Server
-dropdownMenuPlusServer(
-  id = "menu_alertas",
-  icon = shiny::icon("exclamation-triangle"),
-  items_r = reactive(lista_items_alertas()),
-  numItems_r = reactive(length(lista_items_alertas())),
-  badgeStatus_r = reactive(if (hay_criticas()) "danger" else "warning"),
-  headerText = reactive("Alertas operativas"),
-  footerText = "Ver todas"
+MenuHeaderServer(
+  id = "menu_segmentos",
+  items_r = reactive(segmentos),
+  key_cols = "segmento",
+  badgeStatus_r = "info",
+  headerText = "Segmentos de clientes",
+  href = "#",
+  footerText = "Ver reporte completo"
 )
 ```
 
@@ -201,17 +201,16 @@ dropdownMenuPlusServer(
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `items_r` | reactive / list | Items que se pasan a `.list` en `racafe::dropdownMenuPlus()`. |
-| `numItems_r` | reactive / entero / `NULL` | Conteo mostrado en el badge; si es `NULL`, usa `length(items_r)`. |
-| `badgeStatus_r` | reactive / string / `NULL` | Estado visual del badge, por ejemplo `"danger"`, `"warning"`, `"info"` o `"success"`. |
+| `items_r` | reactive / data.frame / list / tag / `NULL` | Contenido del dropdown; en `data.frame` genera filas clicables. |
+| `key_cols` | character / `NULL` | Columnas clave serializadas al hacer click en modo `data.frame`. |
+| `badgeStatus_r` | reactive / string / `NULL` | Estado visual del badge; si es `NULL` o el conteo es cero, el badge se oculta. |
 | `headerText` | reactive / string / `NULL` | Texto del encabezado del dropdown. |
-| `type` | string / `NULL` | Tipo delegado a `racafe::dropdownMenuPlus()`: `"messages"`, `"notifications"` o `"tasks"`. |
-| `icon` | `shiny::icon()` / `NULL` | Ícono personalizado. |
-| `href` | string / `NULL` | URL del footer. |
+| `href` | string / `NULL` | URL del footer; si es `NULL`, no se muestra footer. |
 | `footerText` | string | Etiqueta del footer. |
-| `showBadge` | logical | Controla si se muestra el badge. |
 | `showHeader` | logical | Controla si se muestra el header. |
-| `menuClass` | string / `NULL` | Clases CSS adicionales. |
+| `modal_titulo_fn` | function / `NULL` | Función para construir el título del modal a partir de la selección. |
+| `modal_pre_fn` | function / `NULL` | Función opcional ejecutada antes de abrir el modal. |
+| `modal_contenido_fn` | function / `NULL` | Función para construir la UI del modal a partir de la selección. |
 
 ## Helpers HTML
 
@@ -230,7 +229,7 @@ Ejecuta las demos desde una sesión interactiva de R:
 racafeModulos::DemoCajaModal()
 racafeModulos::DemoTablaReactable()
 racafeModulos::DemoTablaReactable2()
-racafeModulos::DemoDropdownMenuPlus()
+racafeModulos::DemoMenuHeader()
 ```
 
 ## Desarrollo
