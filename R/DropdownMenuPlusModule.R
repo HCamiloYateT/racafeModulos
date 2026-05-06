@@ -32,15 +32,15 @@ dropdownMenuPlusUI <- function(id) {
 #' `reactive({})` como un valor estatico; la funcion resuelve cual es cual
 #' internamente.
 #'
-#' La funcion base `dropdownMenuPlus()` ya existe en `racafe`; este modulo solo
+#' La funcion base `dropdownMenuPlus()` ya existe en `racafeShiny`; este modulo solo
 #' crea el placeholder y lo renderiza reactivamente dentro de un navbar.
 #'
 #' Jerarquia de resolucion:
 #' \itemize{
 #'   \item `icon`: explicito > derivado de `type` > generico, delegado en
-#'     `racafe::dropdownMenuPlus()`.
+#'     `racafeShiny::dropdownMenuPlus()`.
 #'   \item `headerText`: explicito > derivado de `type` > `NULL`, delegado en
-#'     `racafe::dropdownMenuPlus()`.
+#'     `racafeShiny::dropdownMenuPlus()`.
 #'   \item `numItems`: `numItems_r` resuelto > `length(items_r)`.
 #'   \item `badgeStatus`: `badgeStatus_r` resuelto en cada invalidacion.
 #' }
@@ -95,7 +95,7 @@ dropdownMenuPlusServer <- function(id,
 
       if (!is.null(badge_st)) .dropdown_menu_plus_validate_status(badge_st)
 
-      racafe::dropdownMenuPlus(
+      racafeShiny::dropdownMenuPlus(
         type        = type,
         badgeStatus = badge_st,
         icon        = icon,
@@ -293,9 +293,9 @@ DemoDropdownMenuPlus <- function() {
   badgeStatus_r = shiny::reactive(if (nrow(tareas_r()) == 0L) NULL else "warning")
 )'
     ),
-    indicadores = list(ui = 'racafe::dropdownMenuPlus(icon = shiny::icon("chart-line"), headerText = "Indicadores de mercado", badgeStatus = "success", numItems = 3L, ...)'),
-    paleta = list(ui = 'racafe::dropdownMenuPlus(icon = shiny::icon("palette"), showBadge = FALSE, headerText = "Paleta corporativa", .list = list(...))'),
-    glosario = list(ui = 'racafe::dropdownMenuPlus(icon = shiny::icon("book-open"), showBadge = FALSE, headerText = "Glosario", .list = list(...))')
+    indicadores = list(ui = 'racafeShiny::dropdownMenuPlus(icon = shiny::icon("chart-line"), headerText = "Indicadores de mercado", badgeStatus = "success", numItems = 3L, ...)'),
+    paleta = list(ui = 'racafeShiny::dropdownMenuPlus(icon = shiny::icon("palette"), showBadge = FALSE, headerText = "Paleta corporativa", .list = list(...))'),
+    glosario = list(ui = 'racafeShiny::dropdownMenuPlus(icon = shiny::icon("book-open"), showBadge = FALSE, headerText = "Glosario", .list = list(...))')
   )
 
   ui <- bs4Dash::bs4DashPage(
@@ -309,7 +309,7 @@ DemoDropdownMenuPlus <- function() {
         dropdownMenuPlusUI("menu_notificaciones"),
         dropdownMenuPlusUI("menu_mensajes"),
         dropdownMenuPlusUI("menu_tareas"),
-        racafe::dropdownMenuPlus(
+        racafeShiny::dropdownMenuPlus(
           icon = shiny::icon("chart-line"), headerText = "Indicadores de mercado",
           badgeStatus = "success", numItems = 3L,
           shiny::tags$div(
@@ -336,7 +336,7 @@ DemoDropdownMenuPlus <- function() {
             )
           )
         ),
-        racafe::dropdownMenuPlus(
+        racafeShiny::dropdownMenuPlus(
           icon = shiny::icon("palette"), showBadge = FALSE, headerText = "Paleta corporativa",
           .list = list(
             .swatch("Primario", "#1A3A5C"),
@@ -346,7 +346,7 @@ DemoDropdownMenuPlus <- function() {
             .swatch("Texto base", "#333333")
           )
         ),
-        racafe::dropdownMenuPlus(
+        racafeShiny::dropdownMenuPlus(
           icon = shiny::icon("book-open"), showBadge = FALSE, headerText = "Glosario",
           footerText = "Ver glosario completo", href = "#",
           .list = list(
