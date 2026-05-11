@@ -113,10 +113,14 @@ MenuHeaderUI <- function(id, icon, min_width = "280px") {
 #'   badgeStatus_r = "info"
 #' )
 #' }
-MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL, badgeStatus_r = NULL, headerText = NULL,
-                             href = NULL, footerText = "Ver más", showHeader = TRUE, modal_titulo_fn = NULL,
-                             modal_pre_fn = NULL, modal_contenido_fn = NULL, modal_size = "l",
-                             modal_icon = NULL) {
+MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL,
+                             badgeStatus_r = NULL, headerText = NULL,
+                             href = NULL, footerText = "Ver más",
+                             showHeader = TRUE, modal_titulo_fn = NULL,
+                             modal_pre_fn = NULL, modal_contenido_fn = NULL,
+                             modal_size = "l", modal_icon = NULL,
+                             badge_n_r = NULL) {
+  
   .resolve <- function(x) if (shiny::is.reactive(x)) x() else x
   usar_modal <- !is.null(modal_titulo_fn) && !is.null(modal_contenido_fn)
 
@@ -126,6 +130,8 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL, badgeStatus_r 
 
     # Conteo inferido — solo df y lista producen n > 0 ----
     n_r <- shiny::reactive({
+      override <- .resolve(badge_n_r)
+      if (!is.null(override)) return(as.integer(override))
       items <- .resolve(items_r)
       switch(.mh_tipo_items(items), df = nrow(items), lista = length(items), 0L)
     })
