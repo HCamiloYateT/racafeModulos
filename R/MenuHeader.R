@@ -187,10 +187,14 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL, badgeStatus_r 
     # Footer ----
     output$footer_ui <- shiny::renderUI({
       if (is.null(href)) return(NULL)
-      shiny::tags$a(
-        class = "dropdown-item dropdown-footer",
-        href = href, target = "_blank", footerText
-      )
+      shiny::tags$a(class   = "dropdown-item dropdown-footer",
+                    href    = "javascript:void(0);",
+                    onclick = sprintf(
+                      "Shiny.setInputValue('%s', Date.now(), {priority:'event'});",
+                      ns("footer_click")
+                    ),
+                    footerText
+                   )
     })
 
     # Click handler — resuelve selección y dispara modal si está configurado ----
@@ -211,10 +215,11 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL, badgeStatus_r 
       ))
     }, ignoreNULL = TRUE)
 
-    list(
-      seleccion = shiny::reactive(seleccion_r()),
-      n = shiny::reactive(n_r())
-    )
+   list(
+     seleccion    = shiny::reactive(seleccion_r()),
+     n            = shiny::reactive(n_r()),
+     footer_click = shiny::reactive(input$footer_click)
+   )
   })
 }
 
