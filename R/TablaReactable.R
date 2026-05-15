@@ -129,6 +129,7 @@
   rbind(df_norm, df_esp)
 }
 
+
 #' Construye colDefs con sort R-side y headers custom; oculta .row_type
 #' @keywords internal
 .coldefs_default <- function(
