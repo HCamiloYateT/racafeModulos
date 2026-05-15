@@ -1,3 +1,44 @@
+#' Formato numerico por defecto para TablaReactable2
+#' @keywords internal
+.tabla_reactable2_formato_numerico <- function() {
+  reactable::colFormat(separators = TRUE, locales = "es-CO")
+}
+
+#' Aplica formato numerico seguro solo para TablaReactable2
+#' @keywords internal
+.tabla_reactable2_coldefs <- function(
+    data,
+    columnas_override,
+    col_specs,
+    id_col,
+    col_header_n,
+    sort_col = NULL,
+    sort_desc = FALSE,
+    ns_sort = NULL
+) {
+  coldefs <- racafeModulos:::.coldefs_default(
+    data = data,
+    columnas_override = columnas_override,
+    col_specs = col_specs,
+    id_col = id_col,
+    col_header_n = col_header_n,
+    sort_col = sort_col,
+    sort_desc = sort_desc,
+    ns_sort = ns_sort
+  )
+
+  nms_visibles <- if (!is.null(columnas_override)) columnas_override else names(data)
+  nms_visibles <- nms_visibles[!nms_visibles %in% ".row_type"]
+
+  for (nm in nms_visibles) {
+    if (!nm %in% names(data) || !is.numeric(data[[nm]]) || inherits(data[[nm]], c("Date", "POSIXt"))) next
+    if (!is.null(coldefs[[nm]]$format) || !is.null(coldefs[[nm]]$cell)) next
+    coldefs[[nm]]$format <- .tabla_reactable2_formato_numerico()
+  }
+
+  coldefs
+}
+
 TablaReactable2UI <- function(id, estilo = c("minimal", "minimal2")) {
   ns    <- shiny::NS(id)
   estilo <- match.arg(estilo)
@@ -48,7 +89,6 @@ TablaReactable2 <- function(id,
 
   .to_json_arr      <- racafeModulos:::.to_json_arr
   .ordenar_con_pin  <- racafeModulos:::.ordenar_con_pin
-  .coldefs_default  <- racafeModulos:::.coldefs_default
   .resolver_cols_estilo <- racafeModulos:::.resolver_cols_estilo
   .aplicar_heatmap  <- racafeModulos:::.aplicar_heatmap
   .aplicar_valor_color  <- racafeModulos:::.aplicar_valor_color
@@ -120,7 +160,7 @@ TablaReactable2 <- function(id,
       df  <- df_sorted_r()
       srt <- sort_state_r()
 
-      coldefs <- .coldefs_default(
+      coldefs <- .tabla_reactable2_coldefs(
         data              = df,
         columnas_override = columnas,
         col_specs         = col_specs,
