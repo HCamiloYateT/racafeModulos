@@ -44,6 +44,8 @@
 #' @param icon Icono o tag que se mostrará como trigger del dropdown.
 #' @param min_width String CSS para el ancho mínimo del panel. Default:
 #'   `"280px"`.
+#' @param title String opcional para mostrar un tooltip nativo del navegador
+#'   al hacer hover sobre el trigger.
 #'
 #' @return `shiny.tag` con un `<li>` de navegación dropdown.
 #' @export
@@ -52,14 +54,15 @@
 #' \dontrun{
 #' MenuHeaderUI("menu_segmentos", icon = shiny::icon("layer-group"))
 #' }
-MenuHeaderUI <- function(id, icon, min_width = "280px") {
+MenuHeaderUI <- function(id, icon, min_width = "280px", title = NULL) {
   ns <- shiny::NS(id)
   shiny::tags$li(
     class = "nav-item dropdown",
-    # Trigger ESTÁTICO — Bootstrap 4 lo enlaza por ser hijo directo del <li> ----
+    # Trigger — title agrega tooltip nativo del navegador al hacer hover ----
     shiny::tags$a(
       class = "nav-link", `data-toggle` = "dropdown",
       href = "#", `aria-expanded` = "false",
+      title = title,
       icon,
       shiny::uiOutput(ns("badge"), inline = TRUE)
     ),
