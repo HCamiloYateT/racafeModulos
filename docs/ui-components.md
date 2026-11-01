@@ -17,6 +17,6 @@ paquete completo. Se conserva la dependencia heredada y no se alteran CajaModal 
 sus funciones para evitar instalarla. Instale las dependencias reales antes de usar
 R CMD INSTALL . y la demo distribuida con el paquete.
 
-No se realizaron commits ni publicaciones. No se modificaron CRM Nacional,
+Los cambios se entregan mediante PR, sin publicar versiones de paquetes. No se modificaron CRM Nacional,
 PlantillaBs4Dash o Compartido. No se cambiaron versiones ni se añadieron dependencias
 runtime; racafeForms y testthat se declaran como sugeridos para demo/pruebas.

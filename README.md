@@ -321,4 +321,4 @@ La demo muestra dos contenedores (uno abierto y otro cerrado), seis tarjetas, ac
 una tabla/gráfico y un módulo hijo dentro de un modal con Cancelar/Guardar. El servidor hijo
 se registra una sola vez, no cada vez que se abre el modal. No consulta servicios ni bases
 de datos. Vea [integración y validación](docs/ui-components.md) para ejemplos trasladables a
-CRM Nacional; no se modificó CRM ni se hicieron commits/publicaciones de esta ampliación.
+CRM Nacional; no se modificó CRM ni se publicaron versiones de paquetes con esta ampliación.
