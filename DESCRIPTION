@@ -22,10 +22,8 @@ Imports:
     reactable (>= 0.4.0),
     racafe,
     racafeShiny,
-    shinyWidgets,
-    shinyjs
+    racafeForms
 Suggests:
-    racafeForms,
     testthat (>= 3.0.0),
     dplyr (>= 1.1.0),
     plotly (>= 4.10.0),
