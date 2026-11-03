@@ -1,0 +1,81 @@
+# Catálogos agregables sin persistencia ni errores modales ----
+test_that("la comparación normaliza presentación pero conserva ñ", {
+  expect_identical(.lda_key(c("  Café\t Premium  ", "cafe premium", "cafe\u0301 premium")),
+                   rep("CAFE PREMIUM", 3))
+  expect_false(identical(.lda_key("año"), .lda_key("ano")))
+  expect_identical(.lda_trim("  Nueva   Región  "), "Nueva   Región")
+  expect_identical(.lda_values(.lda_picker_choices(c("Café" = "cafe"), FALSE, TRUE))[1:2], c("AGREGAR...", ""))
+  expect_match(as.character(ListaDesplegableAgregableUI(shiny::NS("padre")("hijo"))),
+               'id="padre-hijo-picker_ui"', fixed = TRUE)
+})
+test_that("vacíos y duplicados se muestran solo después de guardar y se limpian", {
+  shiny::testServer(ListaDesplegableAgregable, args = list(choices = c("Café", "Premium"),
+    selected = "Premium", multiple = TRUE), {
+    session$flushReact()
+    initial_ui <- output$picker_ui$html
+    session$setInputs(sel = c("Premium", "AGREGAR..."))
+    expect_true(mostrar_nuevo_r())
+    expect_identical(session$getReturned()$seleccion(), "Premium")
+    expect_null(output$error_valor)
+    session$setInputs(nuevo_valor = "", guardar_nuevo = 1)
+    expect_match(output$error_valor$html, "Complete este campo", fixed = TRUE)
+    expect_null(pending_r())
+    session$setInputs(nuevo_valor = "   CAFE  ", guardar_nuevo = 2)
+    expect_match(output$error_valor$html, "Esta opción ya existe en el catálogo.", fixed = TRUE)
+    expect_null(pending_r())
+    session$setInputs(nuevo_valor = "Nueva Región")
+    expect_null(output$error_valor)
+    session$setInputs(guardar_nuevo = 3)
+    expect_identical(pending_r(), "Nueva Región")
+    session$setInputs(guardar_nuevo = 4)
+    expect_identical(pending_r(), "Nueva Región")
+    session$setInputs(ConfirmarNuevo = TRUE)
+    expect_identical(session$getReturned()$choices(), c("Café", "Premium", "Nueva Región"))
+    expect_identical(session$getReturned()$seleccion(), c("Premium", "Nueva Región"))
+    expect_false(mostrar_nuevo_r())
+    expect_null(pending_r())
+    expect_identical(output$picker_ui$html, initial_ui)
+    session$setInputs(ConfirmarNuevo = FALSE)
+    session$setInputs(ConfirmarNuevo = TRUE, guardar_nuevo = 5)
+    expect_length(session$getReturned()$choices(), 3)
+  })
+})
+test_that("se revalida el catálogo justo antes de confirmar", {
+  shiny::testServer(ListaDesplegableAgregable, args = list(choices = c("Café"), selected = "Café", multiple = FALSE), {
+    session$setInputs(sel = "Café")
+    session$setInputs(sel = "AGREGAR...")
+    expect_identical(session$getReturned()$seleccion(), "Café")
+    session$setInputs(nuevo_valor = "Nueva", guardar_nuevo = 1)
+    expect_identical(pending_r(), "Nueva")
+    choices_r(c("Café", "NUEVA"))
+    session$flushReact()
+    session$setInputs(ConfirmarNuevo = TRUE)
+    expect_identical(session$getReturned()$choices(), c("Café", "NUEVA"))
+    expect_identical(session$getReturned()$seleccion(), "Café")
+    expect_match(output$error_valor$html, "Esta opción ya existe en el catálogo.", fixed = TRUE)
+    expect_null(pending_r())
+  })
+})
+test_that("sin confirmación se recorta, selecciona y no duplica por clic repetido", {
+  shiny::testServer(ListaDesplegableAgregable, args = list(choices = c("Café" = "cafe"), selected = "cafe",
+    multiple = FALSE, confirm = FALSE), {
+    session$setInputs(sel = "cafe")
+    session$setInputs(sel = "AGREGAR...")
+    session$setInputs(nuevo_valor = "  Mi Nueva Opción  ", guardar_nuevo = 1)
+    expect_identical(session$getReturned()$seleccion(), "Mi Nueva Opción")
+    expect_identical(unname(session$getReturned()$choices()), c("cafe", "Mi Nueva Opción"))
+    session$setInputs(guardar_nuevo = 2)
+    expect_length(session$getReturned()$choices(), 2)
+    expect_false("AGREGAR..." %in% session$getReturned()$seleccion())
+  })
+})
+test_that("cancelar conserva la captura sin incorporar la opción", {
+  shiny::testServer(ListaDesplegableAgregable, args = list(choices = "Café", selected = NULL), {
+    session$setInputs(sel = "AGREGAR...")
+    session$setInputs(nuevo_valor = "Nueva", guardar_nuevo = 1)
+    session$setInputs(ConfirmarNuevo = FALSE)
+    expect_null(pending_r())
+    expect_true(mostrar_nuevo_r())
+    expect_identical(session$getReturned()$choices(), "Café")
+  })
+})

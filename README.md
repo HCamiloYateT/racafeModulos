@@ -322,3 +322,20 @@ una tabla/gráfico y un módulo hijo dentro de un modal con Cancelar/Guardar. El
 se registra una sola vez, no cada vez que se abre el modal. No consulta servicios ni bases
 de datos. Vea [integración y validación](docs/ui-components.md) para ejemplos trasladables a
 CRM Nacional; no se modificó CRM ni se publicaron versiones de paquetes con esta ampliación.
+
+## Lista desplegable con incorporación de opciones
+
+Instale primero la revisión actualizada de racafeForms y después racafeModulos; reinicie R
+y recargue el navegador sin caché. Las versiones permanecen sin publicar.
+
+```r
+racafeModulos::DemoListaDesplegableAgregable()
+racafeForms::racafeFormsGallery()
+```
+
+`ListaDesplegableAgregable()` conserva sus argumentos e IDs y añade `uppercase` y `confirm`.
+AGREGAR... permanece primero, no forma parte de la selección ni de TODOS. La captura usa
+racafeForms, errores únicos bajo el campo y confirmación solo para opciones válidas. Se
+conservan las selecciones múltiples y se previenen duplicados por clics repetidos. No cambia
+persistencia ni aplicaciones productivas. Consulte la [guía de migración](docs/lista-agregable.md)
+para el criterio de tildes, namespaces, dependencias, IDs y pruebas.

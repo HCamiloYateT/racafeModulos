@@ -1,183 +1,158 @@
 #' UI del módulo ListaDesplegableAgregable
-#'
-#' Crea los contenedores para una lista desplegable y para el formulario que
-#' permite agregar opciones al catálogo vigente de la sesión.
-#'
-#' @param id String. Identificador del módulo Shiny.
-#'
-#' @return Un `tagList` con las salidas UI del módulo.
+#' @param id Identificador del módulo Shiny, también admite un namespace padre.
+#' @return Contenedores picker_ui y nuevo_ui; conserva los IDs existentes del módulo.
 #' @export
 ListaDesplegableAgregableUI <- function(id) {
   ns <- shiny::NS(id)
-  shiny::tagList(
-    shiny::uiOutput(ns("picker_ui")),
-    shiny::uiOutput(ns("nuevo_ui"))
-  )
+  shiny::tagList(shiny::uiOutput(ns("picker_ui")), shiny::uiOutput(ns("nuevo_ui")))
 }
 
+# Comparación corporativa sin modificar códigos ni etiquetas del catálogo ----
+.lda_trim <- function(value) trimws(as.character(value), whitespace = "[\\h\\v]")
+.lda_key <- function(value) {
+  value <- gsub("[\\h\\v]+", " ", .lda_trim(value), perl = TRUE)
+  value <- chartr("áéíóúüÁÉÍÓÚÜ", "aeiouuAEIOUU", value)
+  toupper(gsub("[\u0301\u0308]", "", value, perl = TRUE))
+}
+.lda_values <- function(choices) unname(as.character(unlist(choices, use.names = FALSE)))
+.lda_keys <- function(choices) .lda_key(c(.lda_values(choices), names(choices)))
+.lda_picker_choices <- function(choices, multiple, fem) {
+  empty <- if (!multiple && !"" %in% .lda_values(choices)) stats::setNames("", if (fem) "Ninguna" else "Ninguno")
+  c(stats::setNames("AGREGAR...", "AGREGAR..."), empty, choices)
+}
+.lda_capture_ui <- function(ns) {
+  racafeForms::racafeForm(id = "nuevo_form", ns = ns, variant = "plain",
+    racafeForms::racafeFormRow(actions = TRUE,
+      shiny::tagList(racafeForms::racafeInputText("nuevo_valor", "Nueva opción", required = TRUE,
+                                                placeholder = "Escriba la nueva opción...", ns = ns),
+                      shiny::uiOutput(ns("error_valor"))),
+      racafeForms::racafeButton("guardar_nuevo", "Guardar", icon = "floppy-disk", ns = ns)))
+}
 
 #' Lista desplegable con creación de opciones en la sesión
-#'
-#' Extiende [racafeShiny::ListaDesplegable()] con la opción `"AGREGAR..."`.
-#' Al seleccionarla se muestra un campo de captura, se valida que el valor no
-#' esté vacío ni duplicado y se solicita confirmación antes de incorporarlo al
-#' catálogo en memoria. Las opciones creadas no se persisten fuera de la sesión.
-#'
-#' @param id String. Identificador del módulo Shiny.
+#' @description Utiliza racafeForms y mantiene el catálogo exclusivamente en memoria.
+#' @param id Identificador del módulo Shiny.
 #' @param label Etiqueta del control.
-#' @param choices Vector de opciones iniciales.
-#' @param selected Opción u opciones seleccionadas inicialmente.
-#' @param multiple Logical. Permite seleccionar varias opciones.
-#' @param fem Logical. Se transmite a `ListaDesplegable()` para usar las
-#'   etiquetas femeninas correspondientes.
-#'
-#' @return Lista con los reactivos `seleccion` y `choices`.
+#' @param choices Vector de opciones iniciales; puede usar etiquetas con nombres y códigos distintos.
+#' @param selected Valores seleccionados inicialmente; NULL no selecciona opciones.
+#' @param multiple Permitir selección múltiple.
+#' @param fem Usar etiquetas femeninas.
+#' @param uppercase Presentación visual en mayúsculas; FALSE conserva la capitalización original.
+#' @param confirm Solicitar racafeConfirm antes de incorporar una opción válida; TRUE conserva la confirmación anterior.
+#' @return Lista con reactivos seleccion y choices. seleccion nunca incluye AGREGAR...
+#' @details La opción reservada AGREGAR... ocupa siempre el primer lugar. Los duplicados
+#'   se comparan ignorando mayúsculas, espacios redundantes y tildes agudas/diéresis de vocales,
+#'   incluidas las formas combinantes. La ñ se distingue de la n. Se comparan códigos y etiquetas.
+#'   Solo se recortan los espacios extremos del valor nuevo; no se cambia su capitalización.
+#'   No muestra errores hasta guardar. Revalida el valor confirmado contra el catálogo vigente
+#'   inmediatamente antes de incorporarlo y consume cada confirmación una sola vez.
+#'   No modifica bases de datos ni persistencia. Mantiene los IDs sel, nuevo_valor, guardar_nuevo,
+#'   error_valor, ConfirmarNuevo y CancelarNuevo. ConfirmarNuevo recibe ahora un lógico de SweetAlert.
 #' @export
-ListaDesplegableAgregable <- function(
-    id,
-    label = NULL,
-    choices,
-    selected = choices,
-    multiple = TRUE,
-    fem = FALSE
-) {
+ListaDesplegableAgregable <- function(id, label = NULL, choices, selected = choices, multiple = TRUE, fem = FALSE,
+                                      uppercase = TRUE, confirm = TRUE) {
+  if (!"uppercase" %in% names(formals(racafeForms::racafeInputSelect))) {
+    stop("Actualice racafeForms a la revisión con selectores corporativos y validación inline.")
+  }
+  for (flag in list(multiple, fem, uppercase, confirm)) {
+    if (!is.logical(flag) || length(flag) != 1L || is.na(flag)) stop("Los estados deben ser lógicos escalares.")
+  }
+  if (any(.lda_keys(choices) == "AGREGAR...")) stop("AGREGAR... es una opción reservada, no un valor del catálogo.")
   shiny::moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-    .lbl_agregar <- "AGREGAR..."
-    .valor_input <- function(x) if (is.null(x)) character(0) else x
-
     choices_r <- shiny::reactiveVal(choices)
     mostrar_nuevo_r <- shiny::reactiveVal(FALSE)
+    attempted_r <- shiny::reactiveVal(FALSE)
+    pending_r <- shiny::reactiveVal(NULL)
+    bound_r <- shiny::reactiveVal(FALSE)
+    initial <- intersect(as.character(selected), .lda_values(choices))
+    if (!multiple) initial <- if (length(initial)) initial[[1]] else ""
+    selection_r <- shiny::reactiveVal(initial)
+    ns <- session$ns
+    rules <- list(nuevo_valor = function(value, values) {
+      if (.lda_key(value) %in% c(.lda_keys(choices_r()), "AGREGAR...")) {
+        "Esta opción ya existe en el catálogo."
+      } else TRUE
+    })
+    .validate <- function(value) racafeForms::racafeValidateForm(list(nuevo_valor = value),
+      .lda_capture_ui(ns), rules = rules, ns = ns)
+    result <- shiny::reactive(.validate(input$nuevo_valor))
 
+    # El picker conserva su binding; las incorporaciones usan el actualizador ----
     output$picker_ui <- shiny::renderUI({
-      racafeShiny::ListaDesplegable(
-        ns("sel"),
-        label = label,
-        choices = c(choices_r(), .lbl_agregar),
-        selected = selected,
-        multiple = multiple,
-        fem = fem
-      )
+      picker <- racafeForms::racafeInputSelect("sel", label,
+        .lda_picker_choices(shiny::isolate(choices_r()), multiple, fem),
+        selected = shiny::isolate(selection_r()), multiple = multiple, empty = FALSE,
+        gender = if (fem) "f" else "m", uppercase = uppercase, ns = ns)
+      picker <- shiny::tagAppendAttributes(picker, `data-rf-action-value` = "AGREGAR...")
+      racafeForms::racafeForm(variant = "plain", picker)
     })
-
     shiny::observeEvent(input$sel, {
-      seleccion <- .valor_input(input$sel)
-      if (.lbl_agregar %in% seleccion) {
+      if (is.null(input$sel) && !bound_r()) return()
+      bound_r(TRUE)
+      selected_now <- as.character(input$sel)
+      clean <- intersect(setdiff(selected_now, "AGREGAR..."), .lda_values(choices_r()))
+      if ("AGREGAR..." %in% selected_now) {
+        if (!multiple) clean <- selection_r()
+        if (!mostrar_nuevo_r()) attempted_r(FALSE)
         mostrar_nuevo_r(TRUE)
-        shinyWidgets::updatePickerInput(
-          session,
-          "sel",
-          selected = setdiff(seleccion, .lbl_agregar)
-        )
+        racafeForms::racafeUpdateSelect(session, "sel", selected = clean)
       }
+      if (!multiple) clean <- if (length(clean)) clean[[1]] else ""
+      selection_r(clean)
     }, ignoreNULL = FALSE)
-
     output$nuevo_ui <- shiny::renderUI({
-      shiny::req(mostrar_nuevo_r())
-      shiny::tags$div(
-        style = "display:flex;align-items:flex-start;gap:6px;margin-top:6px;",
-        shiny::tags$div(
-          style = "flex:1;",
-          shiny::textInput(
-            ns("nuevo_valor"),
-            label = NULL,
-            placeholder = "Escriba la nueva opción...",
-            width = "100%"
-          ),
-          shiny::uiOutput(ns("error_valor"))
-        ),
-        racafeShiny::Boton(
-          ns("guardar_nuevo"),
-          label = NULL,
-          icono = "floppy-disk",
-          size = "xs",
-          title = "Guardar",
-          color_fuente = "#C11007",
-          color_fondo = "#FFF"
-        )
-      )
+      if (mostrar_nuevo_r()) .lda_capture_ui(ns)
     })
-
-    valor_valido <- shiny::reactive({
-      valor <- trimws(if (is.null(input$nuevo_valor)) "" else input$nuevo_valor)
-      if (!nzchar(valor)) return(FALSE)
-      !toupper(valor) %in% toupper(trimws(choices_r()))
-    })
-
     output$error_valor <- shiny::renderUI({
-      shiny::req(mostrar_nuevo_r())
-      valor <- trimws(if (is.null(input$nuevo_valor)) "" else input$nuevo_valor)
-      if (nzchar(valor) && !valor_valido()) {
-        return(shiny::tags$div(
-          style = "color:#DA291C;font-size:11px;margin-top:2px;",
-          "Esa opción ya existe"
-        ))
-      }
-      NULL
-    })
-
-    shiny::observe({
-      shiny::req(mostrar_nuevo_r())
-      if (isTRUE(valor_valido())) {
-        shinyjs::enable("guardar_nuevo")
-      } else {
-        shinyjs::disable("guardar_nuevo")
+      if (!mostrar_nuevo_r() || !attempted_r()) return(NULL)
+      errors <- result()$errors
+      if ("nuevo_valor" %in% names(errors)) {
+        racafeForms::racafeFormMessage(errors[["nuevo_valor"]], "error", size = "compact")
       }
     })
 
-    shiny::observeEvent(input$guardar_nuevo, {
-      shiny::req(valor_valido())
-      racafeShiny::MostrarModalConfirmacion(
-        ns = ns,
-        titulo = "Confirmar nueva opción",
-        texto = paste0(
-          "¿Deseas agregar \"", trimws(input$nuevo_valor), "\" a la lista?"
-        ),
-        id_cancelar = "CancelarNuevo",
-        id_confirmar = "ConfirmarNuevo",
-        label_confirmar = "Guardar",
-        icono_confirmar = "floppy-disk",
-        color_confirmar = "#198754"
-      )
-    })
-
-    shiny::observeEvent(input$CancelarNuevo, {
-      shiny::removeModal()
-    })
-
-    shiny::observeEvent(input$ConfirmarNuevo, {
-      shiny::req(valor_valido())
-      nuevo <- trimws(input$nuevo_valor)
-      actualizadas <- c(choices_r(), nuevo)
-      previa <- setdiff(.valor_input(input$sel), .lbl_agregar)
-      nueva_seleccion <- if (isTRUE(multiple)) c(previa, nuevo) else nuevo
-
-      choices_r(actualizadas)
-      shinyWidgets::updatePickerInput(
-        session,
-        "sel",
-        choices = c(actualizadas, .lbl_agregar),
-        selected = nueva_seleccion
-      )
+    # Consumir primero la solicitud y revalidar contra el catálogo vigente ----
+    .commit <- function() {
+      pending <- pending_r()
+      if (is.null(pending)) return(invisible(NULL))
+      pending_r(NULL)
+      racafeForms::racafeUpdateButton(session, "guardar_nuevo", loading = FALSE)
+      if (!.validate(pending)$valid) return(invisible(NULL))
+      updated <- c(choices_r(), pending)
+      selected_now <- if (multiple) unique(c(selection_r(), pending)) else pending
+      choices_r(updated)
+      selection_r(selected_now)
+      racafeForms::racafeUpdateSelect(session, "sel", choices = .lda_picker_choices(updated, multiple, fem),
+                                     selected = selected_now)
       shiny::updateTextInput(session, "nuevo_valor", value = "")
       mostrar_nuevo_r(FALSE)
-      shiny::removeModal()
-      shiny::showNotification(
-        paste0("Opción \"", nuevo, "\" agregada"),
-        duration = 3,
-        type = "message"
-      )
+      attempted_r(FALSE)
+      racafeForms::racafeNotify(session, "Opción agregada", paste0('Se agregó "', pending, '" al catálogo.'),
+                                type = "success", duration = 3)
+    }
+    shiny::observeEvent(input$guardar_nuevo, {
+      if (!mostrar_nuevo_r() || !is.null(pending_r())) return()
+      attempted_r(TRUE)
+      if (!result()$valid) return()
+      pending_r(.lda_trim(input$nuevo_valor))
+      if (!confirm) { .commit(); return() }
+      racafeForms::racafeUpdateButton(session, "guardar_nuevo", loading = TRUE)
+      racafeForms::racafeConfirm(session, "ConfirmarNuevo", "Confirmar nueva opción",
+        paste0('¿Desea agregar "', pending_r(), '" a la lista?'), ns = ns)
     })
-
-    list(
-      seleccion = shiny::reactive({
-        setdiff(.valor_input(input$sel), .lbl_agregar)
-      }),
-      choices = shiny::reactive(choices_r())
-    )
+    shiny::observeEvent(input$ConfirmarNuevo, {
+      if (isTRUE(input$ConfirmarNuevo)) .commit() else {
+        pending_r(NULL)
+        racafeForms::racafeUpdateButton(session, "guardar_nuevo", loading = FALSE)
+      }
+    }, ignoreInit = TRUE)
+    shiny::observeEvent(input$CancelarNuevo, {
+      pending_r(NULL)
+      racafeForms::racafeUpdateButton(session, "guardar_nuevo", loading = FALSE)
+    })
+    list(seleccion = shiny::reactive(setdiff(selection_r(), "AGREGAR...")), choices = shiny::reactive(choices_r()))
   })
 }
-
 
 #' Demo de ListaDesplegableAgregable
 #'
@@ -196,13 +171,7 @@ DemoListaDesplegableAgregable <- function() {
       collapsed = TRUE,
       status = "white",
       title = shiny::tagList(shiny::icon("code"), paste(" Código:", titulo)),
-      shiny::tags$pre(
-        style = paste0(
-          "background:#F8F9FA;border:1px solid #DEE2E6;border-radius:4px;",
-          "padding:12px;font-size:11px;overflow-x:auto;margin:0;"
-        ),
-        shiny::tags$code(codigo)
-      )
+      shiny::tags$pre(shiny::tags$code(codigo))
     )
   }
 
@@ -211,7 +180,7 @@ DemoListaDesplegableAgregable <- function() {
     "",
     'ListaDesplegableAgregable(',
     '  "seg_multiple", label = "Segmento",',
-    '  choices = c("A LA MEDIDA", "CONVENCIONALES", "PREMIUM"),',
+    '  choices = c("A la medida", "Convencionales", "Premium"),',
     '  selected = NULL, multiple = TRUE',
     ')',
     sep = "\n"
@@ -221,8 +190,8 @@ DemoListaDesplegableAgregable <- function() {
     "",
     'ListaDesplegableAgregable(',
     '  "cat_single", label = "Categoría",',
-    '  choices = c("CAFE", "AZUCAR", "PANELA"),',
-    '  selected = "CAFE", multiple = FALSE, fem = TRUE',
+    '  choices = c("Café", "Azúcar", "Panela"),',
+    '  selected = "Café", multiple = FALSE, fem = TRUE',
     ')',
     sep = "\n"
   )
@@ -233,11 +202,8 @@ DemoListaDesplegableAgregable <- function() {
     sidebar = bs4Dash::bs4DashSidebar(disable = TRUE),
     footer = bs4Dash::bs4DashFooter(),
     body = bs4Dash::bs4DashBody(
-      shinyjs::useShinyjs(),
-      shiny::includeCSS(paste0(
-        "https://raw.githubusercontent.com/HCamiloYateT/Compartido/",
-        "refs/heads/main/Styles/style.css"
-      )),
+      racafeForms::racafeSharedAssets(system.file("gallery-assets", package = "racafeForms"),
+                                      global_css = FALSE, prefix = "racafe-modulos-demo"),
       shiny::fluidRow(
         bs4Dash::bs4Card(
           width = 6,
@@ -271,15 +237,15 @@ DemoListaDesplegableAgregable <- function() {
     res_multiple <- ListaDesplegableAgregable(
       "seg_multiple",
       label = "Segmento",
-      choices = c("A LA MEDIDA", "CONVENCIONALES", "PREMIUM"),
+      choices = c("A la medida", "Convencionales", "Premium"),
       selected = NULL,
       multiple = TRUE
     )
     res_single <- ListaDesplegableAgregable(
       "cat_single",
       label = "Categoría",
-      choices = c("CAFE", "AZUCAR", "PANELA"),
-      selected = "CAFE",
+      choices = c("Café", "Azúcar", "Panela"),
+      selected = "Café",
       multiple = FALSE,
       fem = TRUE
     )
@@ -294,5 +260,6 @@ DemoListaDesplegableAgregable <- function() {
     })
   }
 
+  ui <- shiny::tagList(htmltools::suppressDependencies("googlefonts", "ionicons"), ui)
   shiny::shinyApp(ui = ui, server = server)
 }
