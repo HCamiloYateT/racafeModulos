@@ -1,0 +1,13 @@
+.rcm-tarjeta {position:relative;box-sizing:border-box;background:#fff;border:1px solid #dce4ed;
+ border-radius:10px;padding:10px 12px;min-width:0;color:#252b30;}
+.rcm-tarjeta-content {min-width:0;}
+.rcm-tarjeta-title {font-size:11px;line-height:1.4;color:#506686;display:flex;gap:4px;align-items:center;}
+.rcm-tarjeta-value {display:block;font-size:18px;line-height:1.4;font-weight:600;overflow-wrap:anywhere;}
+.rcm-tarjeta-description {margin-top:4px;font-size:10px;line-height:1.4;color:#506686;overflow-wrap:anywhere;}
+.rcm-tarjeta:has(.rcm-tarjeta-action) .rcm-tarjeta-title {padding-right:26px;}
+.rcm-tarjeta .rcm-tarjeta-action {display:inline-flex;align-items:center;justify-content:center;position:absolute;top:8px;right:8px;width:24px;height:24px;padding:2px;
+ border:1px solid #e2e6ea;border-radius:6px;color:#6c757d;background:#fff;font-size:11px;cursor:pointer;}
+.rcm-tarjeta .rcm-tarjeta-action:hover,.rcm-tarjeta .rcm-tarjeta-action:focus-visible {color:#DA291C;border-color:#DA291C;}
+.rcm-tarjeta .rcm-tarjeta-action:focus-visible {outline:2px solid #DA291C;outline-offset:2px;}
+.rcm-tarjeta-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+@media(max-width:600px) {.rcm-tarjeta-grid {grid-template-columns:1fr;}}

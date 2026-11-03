@@ -248,3 +248,77 @@ devtools::load_all()
 devtools::document()
 devtools::check()
 ```
+
+## Tarjeta compacta con acción desacoplada (desarrollo)
+
+Se revisó `main`: no contenía `Tarjeta`. El patrón más cercano es `CajaModal`, que separa
+UI/moduleServer y evalúa escalares o reactivos. Se conserva sin cambios. La tarjeta nueva
+mantiene esa arquitectura, con diseño compacto y un evento para que el padre decida la acción.
+
+```r
+# UI del padre:
+racafeModulos::TarjetaUI(ns("pedidos"))
+
+# Dentro de moduleServer del padre:
+tarjeta <- racafeModulos::Tarjeta(
+  id = "pedidos", titulo = "Pedidos", valor = shiny::reactive(nrow(datos())),
+  descripcion = "Creación: 20/10/2026", boton = TRUE,
+  icono_boton = "external-link-alt", formato = NULL
+)
+shiny::observeEvent(tarjeta$accion(), {
+  # Abra un modal, actualice un colapsable o invoque lógica del módulo padre.
+})
+```
+
+API definitiva:
+
+```r
+TarjetaUI(id)
+Tarjeta(id, titulo, valor, descripcion = NULL, boton = FALSE,
+        icono_boton = "external-link-alt", formato = NULL, icono = NULL,
+        etiqueta_boton = "Ver detalle")
+```
+
+`titulo`, `valor` y `descripcion` admiten escalares, `reactive()` o `reactiveVal()`.
+El resultado expone `accion()` (NULL inicialmente; contador por clic) y `valor()` (dato
+original). Actualizar el contenido no recrea el botón ni dispara acciones. No se vuelve
+clicable toda la tarjeta. El botón es opcional, discreto, accesible por teclado y está
+descrito por el título de su tarjeta. Use UI con `ns(id)` y servidor con el ID local.
+
+`formato = NULL` presenta 2 como `2`, 1234.56 como `1,234.56` y conserva 0.125.
+Puede indicar un formato de `racafeShiny::ObtenerFormato()` o una función. Solo se formatea
+la presentación numérica; `valor()` sigue siendo numérico. Los datos de texto se escapan;
+no se interpreta HTML externo en títulos, valores ni descripciones. Los NA se muestran como `—`.
+
+Para seis tarjetas en tres columnas use `div(class = "rcm-tarjeta-grid", ...)` con seis
+`TarjetaUI()`. El CSS del paquete adapta la cuadrícula a una columna en móvil, sin estilos
+repetidos por módulo ni necesidad de Compartido. No se añade JavaScript para las tarjetas:
+el botón utiliza el binding nativo de Shiny.
+
+### Demo autocontenida
+
+Instale primero las copias locales modificadas de racafeShiny y racafeModulos y racafeForms:
+
+```sh
+# Desde Libreria-Racafe:
+R CMD INSTALL racafeShiny
+# Después, desde el directorio que contiene ambos repositorios:
+R CMD INSTALL racafeModulos
+```
+
+Se mantienen las dependencias anteriores de racafeModulos, incluido el paquete legacy
+`racafe`; no se eliminó ni se sustituyó por un paquete simulado. Si aún no está instalado,
+instálelo desde `HCamiloYateT/racafe` con sus dependencias antes de instalar racafeModulos.
+La demo requiere racafeForms y las nuevas funciones locales de racafeShiny.
+
+```r
+shiny::runApp(system.file("examples", "componentes-ui.R", package = "racafeModulos"))
+# Para repetirla sin bs4Dash, antes de ejecutarla:
+Sys.setenv(RACAFE_UI_BS4DASH = "0")
+```
+
+La demo muestra dos contenedores (uno abierto y otro cerrado), seis tarjetas, actualizaciones,
+una tabla/gráfico y un módulo hijo dentro de un modal con Cancelar/Guardar. El servidor hijo
+se registra una sola vez, no cada vez que se abre el modal. No consulta servicios ni bases
+de datos. Vea [integración y validación](docs/ui-components.md) para ejemplos trasladables a
+CRM Nacional; no se modificó CRM ni se publicaron versiones de paquetes con esta ampliación.

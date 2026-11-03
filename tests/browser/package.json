@@ -1,0 +1,6 @@
+{
+  "name": "racafe-modulos-ui-browser-tests",
+  "private": true,
+  "scripts": {"test:ui": "node test-componentes-ui.cjs"},
+  "devDependencies": {"playwright": "1.62.1"}
+}
