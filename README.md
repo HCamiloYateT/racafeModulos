@@ -339,3 +339,8 @@ racafeForms, errores únicos bajo el campo y confirmación solo para opciones v�
 conservan las selecciones múltiples y se previenen duplicados por clics repetidos. No cambia
 persistencia ni aplicaciones productivas. Consulte la [guía de migración](docs/lista-agregable.md)
 para el criterio de tildes, namespaces, dependencias, IDs y pruebas.
+
+La revisión de modales y controlbar amplía esa demo con instancias en el panel lateral
+y un modal con footer corporativo. El orden AGREGAR... y uppercase se conservan de main.
+Requiere la revisión de racafeForms que precarga sus tamaños y protege pickers del controlbar.
+Sin cambios en catálogos, persistencia ni versiones; revisión mediante PR.

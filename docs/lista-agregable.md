@@ -118,3 +118,13 @@ y 1 nota verificadas también en origin/main: puntero LICENSE, código históric
 dependencias/llamadas heredadas, documentación de otros componentes y formato de NEWS.
 No se ha presentado ese resultado como un check limpio ni se han modificado módulos ajenos
 para ocultar esas advertencias. Las tres funciones de este componente disponen ahora de ayuda.
+
+## Revisión de modales/controlbar
+
+El orden de AGREGAR... y uppercase ya estaban en main y no se reimplementan. La demo añade
+un modal con botones Shiny nativos normalizados por racafeForms y dos instancias agregables
+en bs4DashControlbar, simple y múltiple. Las dependencias de estilo se precargan en la UI;
+seleccionar no cierra el panel, se conservan las selecciones y el cierre normal funciona.
+Se verifica dentro del caso tests/browser/test-modal-controlbar.cjs de racafeForms, junto
+con la demo existente de 44 comprobaciones. No cambia el constructor ni la persistencia.
+Los cambios se entregan mediante PR, sin publicar una nueva versión.

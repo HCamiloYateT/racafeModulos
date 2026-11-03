@@ -201,7 +201,13 @@ DemoListaDesplegableAgregable <- function() {
     header = bs4Dash::bs4DashNavbar(title = "Demo ListaDesplegableAgregable"),
     sidebar = bs4Dash::bs4DashSidebar(disable = TRUE),
     footer = bs4Dash::bs4DashFooter(),
+    controlbar = bs4Dash::dashboardControlbar(
+      racafeForms::racafeForm(variant = "plain",
+        ListaDesplegableAgregableUI("bar_single"), ListaDesplegableAgregableUI("bar_multiple")),
+      id = "demo_controlbar", width = 440, pinned = FALSE),
     body = bs4Dash::bs4DashBody(
+      racafeForms::racafeFormsDependencies(),
+      racafeForms::racafeButton("demo_modal", "Probar modal y footer corporativo"),
       racafeForms::racafeSharedAssets(system.file("gallery-assets", package = "racafeForms"),
                                       global_css = FALSE, prefix = "racafe-modulos-demo"),
       shiny::fluidRow(
@@ -234,6 +240,16 @@ DemoListaDesplegableAgregable <- function() {
   )
 
   server <- function(input, output, session) {
+    res_bar_single <- ListaDesplegableAgregable("bar_single", "Categoría en controlbar", c("Café", "Té"),
+                                               selected = "Café", multiple = FALSE, fem = TRUE, confirm = FALSE)
+    res_bar_multiple <- ListaDesplegableAgregable("bar_multiple", "Segmentos en controlbar", c("Café", "Premium"),
+                                                 selected = "Premium", multiple = TRUE, confirm = FALSE)
+    shiny::observeEvent(input$demo_modal, {
+      shiny::showModal(racafeForms::racafeModal("Sin persistencia ni datos empresariales", title = "Modal de prueba",
+        size = "aviso", footer = racafeForms::racafeModalFooter(shiny::modalButton("Cancelar"),
+          shiny::actionButton("demo_confirm", "Confirmar"))))
+    })
+    shiny::observeEvent(input$demo_confirm, { shiny::removeModal() })
     res_multiple <- ListaDesplegableAgregable(
       "seg_multiple",
       label = "Segmento",
@@ -255,7 +271,8 @@ DemoListaDesplegableAgregable <- function() {
         seg_seleccion = res_multiple$seleccion(),
         seg_catalogo = res_multiple$choices(),
         cat_seleccion = res_single$seleccion(),
-        cat_catalogo = res_single$choices()
+        cat_catalogo = res_single$choices(),
+        bar_simple = res_bar_single$seleccion(), bar_multiple = res_bar_multiple$seleccion()
       )
     })
   }

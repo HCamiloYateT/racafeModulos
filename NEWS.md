@@ -1,3 +1,9 @@
+# Demo de modal y controlbar (sin publicar)
+
+- Precarga dependencias RF y demuestra cancelación/confirmación con botones nativos normalizados.
+- Añade listas agregables simples y múltiples al controlbar sin cambiar su implementación.
+- Conserva AGREGAR primero, mayúsculas visuales, namespaces, selección y persistencia existente.
+
 # Listas agregables y validación por campo (sin publicar)
 
 - Sustituye controles locales y botones racafeShiny por componentes racafeForms.
