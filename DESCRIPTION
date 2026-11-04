@@ -1,6 +1,6 @@
 Package: racafeModulos
 Title: Modulos Shiny Reutilizables para Ecosistemas Analiticos
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: person("Racafe", "Analytics", role = c("aut", "cre"),
     email = "analytics@racafe.com")
 Description: Coleccion de modulos Shiny modulares y reutilizables orientados
@@ -21,10 +21,11 @@ Imports:
     htmltools (>= 0.5.0),
     reactable (>= 0.4.0),
     racafe,
-    racafeShiny,
-    racafeForms
+    racafeShiny (>= 1.3.0),
+    racafeForms (>= 0.7.0)
 Suggests:
     testthat (>= 3.0.0),
+    later,
     dplyr (>= 1.1.0),
     plotly (>= 4.10.0),
     gt (>= 0.9.0),
