@@ -79,3 +79,22 @@ test_that("cancelar conserva la captura sin incorporar la opción", {
     expect_identical(session$getReturned()$choices(), "Café")
   })
 })
+
+test_that("la confirmación con resumen conserva selección y consume cada incorporación una vez", {
+  shiny::testServer(ListaDesplegableAgregable,
+    args = list(choices = c("Café", "Premium"), selected = "Premium", confirmation = "summary"), {
+    session$flushReact()
+    session$setInputs(sel = c("Premium", "AGREGAR..."), nuevo_valor = "Nueva")
+    session$setInputs(guardar_nuevo = 1)
+    expect_identical(pending_r(), "Nueva")
+    session$setInputs(CancelarNuevo = 1)
+    expect_null(pending_r())
+    expect_identical(session$getReturned()$choices(), c("Café", "Premium"))
+    session$setInputs(guardar_nuevo = 2, ConfirmarNuevo = 1)
+    expect_identical(session$getReturned()$choices(), c("Café", "Premium", "Nueva"))
+    expect_identical(session$getReturned()$seleccion(), c("Premium", "Nueva"))
+    session$setInputs(ConfirmarNuevo = 2)
+    expect_identical(session$getReturned()$choices(), c("Café", "Premium", "Nueva"))
+    expect_identical(.lda_values(.lda_picker_choices(session$getReturned()$choices(), TRUE, FALSE))[1], "AGREGAR...")
+  })
+})

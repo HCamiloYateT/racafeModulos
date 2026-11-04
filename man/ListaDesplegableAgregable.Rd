@@ -12,7 +12,8 @@ ListaDesplegableAgregable(
   multiple = TRUE,
   fem = FALSE,
   uppercase = TRUE,
-  confirm = TRUE
+  confirm = TRUE,
+  confirmation = c("alert", "summary")
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ ListaDesplegableAgregable(
 \item{uppercase}{Presentación visual en mayúsculas; FALSE conserva la capitalización original.}
 
 \item{confirm}{Solicitar racafeConfirm antes de incorporar una opción válida; TRUE conserva la confirmación anterior.}
+
+\item{confirmation}{alert conserva SweetAlert; summary utiliza el modal con resumen de racafeForms.}
 }
 \value{
 Lista con reactivos seleccion y choices. seleccion nunca incluye AGREGAR...
