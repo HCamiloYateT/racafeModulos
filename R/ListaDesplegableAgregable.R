@@ -39,6 +39,7 @@ ListaDesplegableAgregableUI <- function(id) {
 #' @param fem Usar etiquetas femeninas.
 #' @param uppercase Presentación visual en mayúsculas; FALSE conserva la capitalización original.
 #' @param confirm Solicitar racafeConfirm antes de incorporar una opción válida; TRUE conserva la confirmación anterior.
+#' @param confirmation alert conserva SweetAlert; summary utiliza el modal con resumen de racafeForms.
 #' @return Lista con reactivos seleccion y choices. seleccion nunca incluye AGREGAR...
 #' @details La opción reservada AGREGAR... ocupa siempre el primer lugar. Los duplicados
 #'   se comparan ignorando mayúsculas, espacios redundantes y tildes agudas/diéresis de vocales,
@@ -50,9 +51,13 @@ ListaDesplegableAgregableUI <- function(id) {
 #'   error_valor, ConfirmarNuevo y CancelarNuevo. ConfirmarNuevo recibe ahora un lógico de SweetAlert.
 #' @export
 ListaDesplegableAgregable <- function(id, label = NULL, choices, selected = choices, multiple = TRUE, fem = FALSE,
-                                      uppercase = TRUE, confirm = TRUE) {
+                                      uppercase = TRUE, confirm = TRUE, confirmation = c("alert", "summary")) {
   if (!"uppercase" %in% names(formals(racafeForms::racafeInputSelect))) {
     stop("Actualice racafeForms a la revisión con selectores corporativos y validación inline.")
+  }
+  confirmation <- match.arg(confirmation)
+  if (confirmation == "summary" && !"racafeConfirmation" %in% getNamespaceExports("racafeForms")) {
+    stop("Actualice racafeForms a 0.6.0 para utilizar la confirmación con resumen.")
   }
   for (flag in list(multiple, fem, uppercase, confirm)) {
     if (!is.logical(flag) || length(flag) != 1L || is.na(flag)) stop("Los estados deben ser lógicos escalares.")
@@ -137,11 +142,19 @@ ListaDesplegableAgregable <- function(id, label = NULL, choices, selected = choi
       pending_r(.lda_trim(input$nuevo_valor))
       if (!confirm) { .commit(); return() }
       racafeForms::racafeUpdateButton(session, "guardar_nuevo", loading = TRUE)
-      racafeForms::racafeConfirm(session, "ConfirmarNuevo", "Confirmar nueva opción",
+      if (confirmation == "summary") {
+        shiny::showModal(racafeForms::racafeConfirmation("ConfirmarNuevo", list(`Nueva opción` = pending_r()),
+          title = "Confirmar nueva opción", ns = ns, cancel_id = "CancelarNuevo"))
+      } else racafeForms::racafeConfirm(session, "ConfirmarNuevo", "Confirmar nueva opción",
         paste0('¿Desea agregar "', pending_r(), '" a la lista?'), ns = ns)
     })
     shiny::observeEvent(input$ConfirmarNuevo, {
-      if (isTRUE(input$ConfirmarNuevo)) .commit() else {
+      accepted <- if (confirmation == "summary") is.numeric(input$ConfirmarNuevo) &&
+        length(input$ConfirmarNuevo) == 1L && input$ConfirmarNuevo > 0 else isTRUE(input$ConfirmarNuevo)
+      if (accepted) {
+        if (confirmation == "summary") shiny::removeModal()
+        .commit()
+      } else {
         pending_r(NULL)
         racafeForms::racafeUpdateButton(session, "guardar_nuevo", loading = FALSE)
       }
@@ -241,9 +254,10 @@ DemoListaDesplegableAgregable <- function() {
 
   server <- function(input, output, session) {
     res_bar_single <- ListaDesplegableAgregable("bar_single", "Categoría en controlbar", c("Café", "Té"),
-                                               selected = "Café", multiple = FALSE, fem = TRUE, confirm = FALSE)
+                                               selected = "Café", multiple = FALSE, fem = TRUE,
+                                               confirmation = "summary")
     res_bar_multiple <- ListaDesplegableAgregable("bar_multiple", "Segmentos en controlbar", c("Café", "Premium"),
-                                                 selected = "Premium", multiple = TRUE, confirm = FALSE)
+                                                 selected = "Premium", multiple = TRUE, confirmation = "summary")
     shiny::observeEvent(input$demo_modal, {
       shiny::showModal(racafeForms::racafeModal("Sin persistencia ni datos empresariales", title = "Modal de prueba",
         size = "aviso", footer = racafeForms::racafeModalFooter(shiny::modalButton("Cancelar"),

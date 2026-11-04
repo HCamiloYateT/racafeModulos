@@ -344,3 +344,12 @@ La revisión de modales y controlbar amplía esa demo con instancias en el panel
 y un modal con footer corporativo. El orden AGREGAR... y uppercase se conservan de main.
 Requiere la revisión de racafeForms que precarga sus tamaños y protege pickers del controlbar.
 Sin cambios en catálogos, persistencia ni versiones; revisión mediante PR.
+
+## Confirmación con resumen corporativo
+
+Instale primero racafeForms >= 0.6.0 desde Libreria-Racafe. El comportamiento anterior se conserva:
+`ListaDesplegableAgregable(..., confirmation = "alert")` utiliza SweetAlert.
+Para revisar la opción en un modal con resumen, use `confirmation = "summary"`.
+`confirm = FALSE` sigue omitiendo la confirmación. AGREGAR... continúa primero; códigos, selecciones
+y comparación de duplicados conservan su contrato. El resumen no escribe datos externos.
+`DemoListaDesplegableAgregable()` incorpora ambos selectores dentro del controlbar con este modo.

@@ -1,3 +1,9 @@
+# Componentes corporativos (sin publicar)
+
+- Añade confirmation = "summary" al selector agregable con racafeForms >= 0.6.0.
+- Conserva confirmation = "alert" como predeterminado, confirm = FALSE y los IDs existentes.
+- Demuestra el resumen en controlbar y prueba cancelación, selección, duplicados y confirmación única.
+
 # Demo de modal y controlbar (sin publicar)
 
 - Precarga dependencias RF y demuestra cancelación/confirmación con botones nativos normalizados.
