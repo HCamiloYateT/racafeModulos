@@ -47,6 +47,11 @@
 #' @param title String opcional para mostrar un tooltip nativo del navegador
 #'   al hacer hover sobre el trigger.
 #'
+#' @param direct Activar directamente el único registro data.frame del menú, sin abrir un segundo panel.
+#' @param button_size Tamaño sm, md o lg del trigger, sin expandir el li.
+#' @param max_height Altura máxima desplazable del panel.
+#' @param keep_open_on_select TRUE conserva el dropdown al seleccionar y abrir modal; FALSE cierra al seleccionar.
+#'   NULL conserva el comportamiento anterior (clics internos no cierran).
 #' @return `shiny.tag` con un `<li>` de navegación dropdown.
 #' @export
 #'
@@ -54,28 +59,26 @@
 #' \dontrun{
 #' MenuHeaderUI("menu_segmentos", icon = shiny::icon("layer-group"))
 #' }
-MenuHeaderUI <- function(id, icon, min_width = "280px", title = NULL) {
+MenuHeaderUI <- function(id, icon, min_width = "280px", title = NULL, button_size = "sm",
+                           max_height = "520px", keep_open_on_select = NULL, direct = FALSE) {
   ns <- shiny::NS(id)
-  shiny::tags$li(
-    class = "nav-item dropdown",
+  if (!is.logical(direct) || length(direct) != 1L || is.na(direct)) stop("direct debe ser lógico.")
+  button_size <- match.arg(button_size, c("sm", "md", "lg"))
+  if (!is.null(keep_open_on_select) && (!is.logical(keep_open_on_select) ||
+      length(keep_open_on_select) != 1L || is.na(keep_open_on_select))) stop("keep_open_on_select debe ser lógico.")
+  keep <- if (is.null(keep_open_on_select)) "legacy" else tolower(as.character(keep_open_on_select))
     # Trigger — title agrega tooltip nativo del navegador al hacer hover ----
-    shiny::tags$a(
-      class = "nav-link", `data-toggle` = "dropdown",
-      href = "#", `aria-expanded` = "false",
-      title = title,
-      icon,
-      shiny::uiOutput(ns("badge"), inline = TRUE)
-    ),
     # stopPropagation evita que Bootstrap cierre el menú al hacer click interno ----
-    shiny::tags$div(
-      class = "dropdown-menu dropdown-menu-lg",
-      style = paste0("min-width:", min_width, ";"),
-      onclick = "event.stopPropagation();",
-      shiny::uiOutput(ns("header_ui")),
-      shiny::uiOutput(ns("contenido_ui")),
-      shiny::uiOutput(ns("footer_ui"))
-    )
-  )
+  tag <- shiny::tags$li(class = paste("nav-item dropdown rmh-menu", paste0("rmh-menu--", button_size)),
+    `data-rmh-keep` = keep, `data-rmh-select` = ns("item_click"),
+    `data-rmh-direct` = tolower(as.character(direct)), `data-rmh-open` = ns("open"),
+    style = paste0("--rmh-min-width:", shiny::validateCssUnit(min_width),
+      ";--rmh-max-height:", shiny::validateCssUnit(max_height), ";"),
+    shiny::tags$a(class = "nav-link rmh-trigger", `data-toggle` = "dropdown", href = "#",
+      `aria-expanded` = "false", title = title, icon, shiny::uiOutput(ns("badge"), inline = TRUE)),
+    shiny::tags$div(class = "dropdown-menu dropdown-menu-lg dropdown-menu-right rmh-panel",
+      shiny::uiOutput(ns("header_ui")), shiny::uiOutput(ns("contenido_ui")), shiny::uiOutput(ns("footer_ui"))))
+  htmltools::attachDependencies(tag, .mh_dependency())
 }
 
 #' Server del módulo MenuHeader
@@ -104,6 +107,10 @@ MenuHeaderUI <- function(id, icon, min_width = "280px", title = NULL) {
 #' @param modal_size String. Tamaño de `shiny::modalDialog()`. Default: `"l"`.
 #' @param modal_icon String opcional para `shiny::icon()` en el título.
 #'
+#' @param badge_n_r Conteo opcional, valor o reactivo; conserva la inferencia anterior cuando es NULL.
+#' @details Los racafeListItem con value y sin id adoptan el input de selección del menú.
+#'   Los tamaños corporativos subventana1 a subventana5, ventana y aviso usan racafeModalDetail;
+#'   los tamaños Shiny anteriores conservan modalDialog.
 #' @return Lista con reactivos `seleccion` y `n`.
 #' @export
 #'
@@ -136,7 +143,8 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL,
       override <- .resolve(badge_n_r)
       if (!is.null(override)) return(as.integer(override))
       items <- .resolve(items_r)
-      switch(.mh_tipo_items(items), df = nrow(items), lista = length(items), 0L)
+      switch(.mh_tipo_items(items), df = nrow(items), lista = length(items),
+        tag = .mh_count_list_items(items), 0L)
     })
 
     # Badge — oculto si n == 0 o badgeStatus es NULL ----
@@ -163,10 +171,11 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL,
       items <- .resolve(items_r)
       tipo <- .mh_tipo_items(items)
       switch(tipo,
-        tag = items,
-        lista = do.call(shiny::tagList, items),
+        tag = .mh_list_items(items, ns("item_click")),
+        lista = .mh_list_items(do.call(shiny::tagList, items), ns("item_click")),
         df = {
           shiny::req(!is.null(key_cols), all(key_cols %in% names(items)))
+          if (!nrow(items)) return(racafeShiny::racafeListGroup())
           cols_vis <- setdiff(names(items), key_cols)
           filas_ui <- lapply(seq_len(nrow(items)), function(i) {
             fila <- items[i, , drop = FALSE]
@@ -175,17 +184,11 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL,
               .mh_validate_status(st)
               shiny::tags$span(class = paste0("badge badge-", st, " mr-2"), st)
             }
-            shiny::tags$a(
-              class = "dropdown-item d-flex align-items-center",
-              href = "javascript:void(0);",
-              style = "white-space:normal;",
-              onclick = sprintf(
-                "Shiny.setInputValue('%s', %s, {priority:'event'});",
-                ns("item_click"), .mh_keys_js(fila, key_cols)
-              ),
-              badge_item,
-              shiny::tags$span(as.character(fila$label), style = "font-size:13px;")
-            )
+            keys <- lapply(fila[key_cols], function(value) {
+              text <- as.character(value[[1]]); if (is.na(text)) "NA" else text
+            })
+            racafeShiny::racafeListItem(title = .mh_label(fila$label), badges = badge_item,
+              value = keys, id = ns("item_click"))
           })
           do.call(shiny::tagList, filas_ui)
         },
@@ -196,19 +199,12 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL,
     # Footer ----
     output$footer_ui <- shiny::renderUI({
       if (is.null(href)) return(NULL)
-      shiny::tags$a(class   = "dropdown-item dropdown-footer",
-                    href    = "javascript:void(0);",
-                    onclick = sprintf(
-                      "Shiny.setInputValue('%s', Date.now(), {priority:'event'});",
-                      ns("footer_click")
-                    ),
-                    footerText
-                   )
+      shiny::tags$a(class = "dropdown-item dropdown-footer", href = "#",
+                    `data-rmh-footer` = ns("footer_click"), footerText)
     })
 
     # Click handler — resuelve selección y dispara modal si está configurado ----
-    shiny::observeEvent(input$item_click, {
-      sel <- input$item_click
+    .select <- function(sel) {
       seleccion_r(sel)
       if (!usar_modal) return()
       if (!is.null(modal_pre_fn)) modal_pre_fn(sel)
@@ -217,12 +213,22 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL,
       } else {
         modal_titulo_fn(sel)
       }
-      shiny::showModal(shiny::modalDialog(
-        title = titulo, size = modal_size, easyClose = TRUE,
-        footer = shiny::modalButton("Cerrar"),
-        modal_contenido_fn(sel)
-      ))
-    }, ignoreNULL = TRUE)
+      content <- modal_contenido_fn(sel)
+      modal <- if (modal_size %in% c("ventana", paste0("subventana", 1:5), "aviso")) {
+        racafeForms::racafeModalDetail(titulo, content, size = modal_size, easy_close = TRUE)
+      } else shiny::modalDialog(title = titulo, size = modal_size, easyClose = TRUE,
+        footer = shiny::modalButton("Cerrar"), content)
+      shiny::showModal(modal)
+    }
+    shiny::observeEvent(input$item_click, { .select(input$item_click) }, ignoreNULL = TRUE)
+    shiny::observeEvent(input$open, {
+      items <- .resolve(items_r)
+      shiny::req(is.data.frame(items), nrow(items) == 1L, length(key_cols), all(key_cols %in% names(items)))
+      sel <- lapply(items[1L, key_cols, drop = FALSE], function(value) {
+        text <- as.character(value[[1]]); if (is.na(text)) "NA" else text
+      })
+      .select(sel)
+    }, ignoreInit = TRUE)
 
    list(
      seleccion    = shiny::reactive(seleccion_r()),
@@ -241,6 +247,7 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL,
 #' modal `gt`, lista de tags KPI y contenido embebido con `reactable` dentro
 #' del panel del dropdown.
 #'
+#' @param corporate TRUE abre la galería corporativa; FALSE conserva la demostración anterior.
 #' @return Ejecuta `shiny::shinyApp()`.
 #' @export
 #'
@@ -248,7 +255,9 @@ MenuHeaderServer <- function(id, items_r = NULL, key_cols = NULL,
 #' \dontrun{
 #' DemoMenuHeader()
 #' }
-DemoMenuHeader <- function() {
+DemoMenuHeader <- function(corporate = FALSE) {
+  if (isTRUE(corporate)) return(shiny::shinyAppDir(system.file("examples", "navbar-components",
+    package = "racafeModulos", mustWork = TRUE)))
 
   # Datos ----
 
@@ -589,4 +598,40 @@ DemoMenuHeader <- function() {
   }
 
   shiny::shinyApp(ui, server)
+}
+
+# DEPENDENCIAS Y SELECCION DE LISTAS ----
+.mh_dependency <- function() {
+  htmltools::htmlDependency("racafe-menu-header", "0.2.0",
+    src = c(file = system.file("menu-header", package = "racafeModulos")),
+    stylesheet = "header.css", script = "header.js")
+}
+.mh_list_items <- function(node, input_id) {
+  if (inherits(node, "shiny.tag")) {
+    classes <- node$attribs$class
+    if (!is.null(classes) && grepl("(^| )rsh-list-item( |$)", classes) &&
+        !is.null(node$attribs$`data-rsh-value`) && is.null(node$attribs$`data-rsh-input`)) {
+      node$attribs$`data-rsh-input` <- input_id
+      node$attribs$role <- "button"
+      node$attribs$`aria-pressed` <- tolower(as.character(grepl("rsh-list-item--selected", classes, fixed = TRUE)))
+      if (!identical(node$attribs$`aria-disabled`, "true")) node$attribs$tabindex <- "0"
+    }
+    node$children <- lapply(node$children, .mh_list_items, input_id = input_id)
+  } else if (is.list(node)) node[] <- lapply(node, .mh_list_items, input_id = input_id)
+  node
+}
+
+.mh_count_list_items <- function(node) {
+  if (inherits(node, "shiny.tag")) {
+    if (!is.null(node$attribs$class) && grepl("(^| )rsh-list-item( |$)", node$attribs$class)) return(1L)
+    return(as.integer(sum(vapply(node$children, .mh_count_list_items, integer(1)))))
+  }
+  if (is.list(node)) return(as.integer(sum(vapply(node, .mh_count_list_items, integer(1)))))
+  0L
+}
+
+.mh_label <- function(value) {
+  if (!length(value)) return("\u00a0")
+  value <- as.character(value[[1]])
+  if (is.na(value)) "NA" else if (!nzchar(value)) "\u00a0" else value
 }

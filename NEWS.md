@@ -1,3 +1,9 @@
+# 0.2.0 — Navbar corporativo
+
+- Amplía MenuHeader sin duplicar módulos: li directo, listas reactivas, selección segura y retención configurable.
+- Añade acceso directo y galería modular con detalle, checklist, tablas y overlays.
+- Requiere racafeShiny >= 1.3.0 y racafeForms >= 0.7.0.
+
 # Componentes corporativos (sin publicar)
 
 - Añade confirmation = "summary" al selector agregable con racafeForms >= 0.6.0.

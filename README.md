@@ -353,3 +353,30 @@ Para revisar la opción en un modal con resumen, use `confirmation = "summary"`.
 `confirm = FALSE` sigue omitiendo la confirmación. AGREGAR... continúa primero; códigos, selecciones
 y comparación de duplicados conservan su contrato. El resumen no escribe datos externos.
 `DemoListaDesplegableAgregable()` incorpora ambos selectores dentro del controlbar con este modo.
+
+## Navbar corporativo (0.2.0)
+
+Instalar primero `racafeShiny >= 1.3.0` y `racafeForms >= 0.7.0` desde las subcarpetas
+de `HCamiloYateT/Libreria-Racafe`, y después este paquete. Durante la revisión, usar
+`ref = "codex/navbar-components"` en las tres instalaciones con `remotes::install_github()`.
+
+```r
+racafeModulos::DemoMenuHeader(corporate = TRUE)
+```
+
+La demostración tiene dos módulos independientes, tareas, clientes, selección, modales,
+checklists y consultas simuladas con overlay local. No utiliza datos de producción.
+`DemoMenuHeader()` conserva la demostración anterior.
+
+`MenuHeaderUI()` retorna un `li` para `rightUi = shiny::tagList(...)`. Los nuevos argumentos son
+`button_size`, `max_height`, `keep_open_on_select` y `direct`. Se conserva el ancho anterior de 280px;
+NULL en `keep_open_on_select` mantiene el comportamiento previo; TRUE conserva el menú durante modales;
+FALSE cierra al seleccionar. `direct = TRUE` abre el único registro del data.frame sin mostrar panel.
+`MenuHeaderServer()` acepta `racafeListGroup`/`racafeListItem`, conservando sus retornos y claves anteriores.
+No se necesitan onclick ni estilos en la aplicación.
+
+La [guía de migración y compatibilidad](https://github.com/HCamiloYateT/Libreria-Racafe/blob/codex/navbar-components/docs/navbar/README.md)
+incluye instalación completa, matriz de APIs y uso del loader con on.exit/finally.
+Pruebas: `testthat::test_local()` y `tests/browser/test-navbar-components.cjs` (Playwright).
+Para la prueba de navegador iniciar la galería, establecer `RACAFE_NAVBAR_URL` y `CHROMIUM_PATH`,
+y ejecutar `node tests/browser/test-navbar-components.cjs` con Playwright disponible en NODE_PATH.

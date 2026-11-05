@@ -1,0 +1,14 @@
+/* NAVBAR CORPORATIVO ---- */
+.rmh-menu {flex:0 0 auto;min-width:0;}
+.rmh-menu > .rmh-trigger {display:inline-flex;align-items:center;justify-content:center;gap:4px;
+ width:auto;max-width:100%;position:relative;white-space:nowrap;}
+.rmh-menu--sm > .rmh-trigger {padding:6px 8px;}
+.rmh-menu--md > .rmh-trigger {padding:8px 10px;}
+.rmh-menu--lg > .rmh-trigger {padding:10px 12px;}
+.rmh-menu > .rmh-panel {min-width:min(var(--rmh-min-width,280px),calc(100vw - 24px));
+ max-width:calc(100vw - 24px);max-height:min(var(--rmh-max-height,520px),calc(100vh - 64px));
+ overflow-y:auto;overflow-x:hidden;white-space:normal;transform:translateX(var(--rmh-offset,0px));}
+.rmh-panel .rsh-list-item {border-radius:0;}
+.rmh-panel .shiny-html-output {min-width:0;}
+
+.rmh-tooltip {pointer-events:none;}
