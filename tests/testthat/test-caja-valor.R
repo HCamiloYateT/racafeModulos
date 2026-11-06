@@ -36,3 +36,24 @@ test_that("Dos instancias de CajaValor se mantienen independientes", {
     expect_equal(shiny::isolate(session$returned$two$click_detalle()), 7)
   })
 })
+
+test_that("CajaValor admite borde e icono corporativos sin alterar el valor", {
+  html <- as.character(cajaValor_ui("cliente", icono = "industry", mostrar_boton = FALSE,
+    color_borde = "#DA291C", color_icono = "#DA291C", detalle = "Creación: 06/11/2026"))
+  expect_match(html, "border:1px solid #DA291C", fixed = TRUE)
+  expect_match(html, "color:#DA291C", fixed = TRUE)
+  expect_match(html, "fa-industry", fixed = TRUE)
+  expect_match(html, "Creación: 06/11/2026", fixed = TRUE)
+  expect_error(cajaValor_ui("bad", color_borde = "red;display:none"), "Color")
+})
+
+test_that("CajaValor distingue cantidades desconocidas y cero cuando se solicita empty", {
+  valor <- shiny::reactiveVal(NA_real_)
+  shiny::testServer(cajaValor_server, args = list(valor_r = valor, formato = "numero", empty = "Sin dato"), {
+    session$flushReact()
+    expect_match(output$valor_display$html, "Sin dato", fixed = TRUE)
+    valor(0)
+    session$flushReact()
+    expect_match(output$valor_display$html, "0.00", fixed = TRUE)
+  })
+})

@@ -4,7 +4,7 @@
 \alias{cajaValor_server}
 \title{Servidor del módulo CajaValor}
 \usage{
-cajaValor_server(id, valor_r, formato, meta = NA)
+cajaValor_server(id, valor_r, formato, meta = NA, empty = NULL)
 }
 \arguments{
 \item{id}{ID local del módulo.}
@@ -14,6 +14,8 @@ cajaValor_server(id, valor_r, formato, meta = NA)
 \item{formato}{Formato registrado en racafeShiny::DefinirFormato.}
 
 \item{meta}{Meta numérica opcional; NA desactiva el color condicional.}
+
+\item{empty}{Texto opcional para valor NULL/NA; NULL conserva la suspensión del output anterior.}
 }
 \value{
 Lista con click_detalle, reactivo del botón de detalle.

@@ -1,3 +1,9 @@
+# 0.4.0 — Cajas corporativas de cliente
+
+- cajaValor_ui acepta color_borde, color_icono y detalle opcionales; sus valores por defecto conservan la apariencia.
+- cajaValor_server acepta empty para distinguir cantidades desconocidas de cero, conservando su default anterior.
+- Mantiene IDs, eventos y firmas posicionales; añade documentación y pruebas de compatibilidad y valores faltantes.
+
 # 0.3.1 — Presentación de encabezados
 
 - Ordena listados con títulos a todo el ancho, metadatos y badges debajo del contenido.
