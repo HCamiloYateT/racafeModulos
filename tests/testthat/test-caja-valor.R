@@ -57,3 +57,27 @@ test_that("CajaValor distingue cantidades desconocidas y cero cuando se solicita
     expect_match(output$valor_display$html, "0.00", fixed = TRUE)
   })
 })
+
+test_that("La meta respeta indicadores directos e inversos, incluida igualdad y cero", {
+  cases <- data.frame(valor = c(9, 10, 11, 9, 10, 11, 0), meta = c(rep(10, 6), 0),
+    prop = c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+    color = c("#C0392B", "#1A7A5E", "#1A7A5E", "#1A7A5E", "#1A7A5E", "#C0392B", "#1A7A5E"))
+  for (i in seq_len(nrow(cases))) {
+    item <- cases[i, ]
+    shiny::testServer(cajaValor_server, args = list(valor_r = shiny::reactive(item$valor), formato = "numero",
+      meta = item$meta, prop = item$prop), {
+      session$flushReact()
+      expect_match(output$valor_display$html, item$color, fixed = TRUE)
+    })
+  }
+})
+
+test_that("El ID de acción configurable conserva el evento público", {
+  html <- as.character(cajaValor_ui("validacion", id_boton = "btn_abrir"))
+  expect_match(html, 'id="validacion-btn_abrir"', fixed = TRUE)
+  shiny::testServer(cajaValor_server, args = list(valor_r = shiny::reactive(2), formato = "entero",
+    id_boton = "btn_abrir"), {
+    session$setInputs(btn_abrir = 1)
+    expect_equal(shiny::isolate(session$returned$click_detalle()), 1)
+  })
+})

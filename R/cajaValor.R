@@ -10,11 +10,12 @@
 #' @param color_icono Color CSS opcional del icono; NULL utiliza color.
 #' @param detalle Texto o contenido Shiny opcional debajo del valor.
 #' @param compact Reducir padding, separación vertical e icono; FALSE utiliza la densidad normal.
-#' @param color Color principal para borde lateral, título, icono, KPI y footer.
-#' @param color_kpi,color_footer Colores opcionales por zona; NULL utiliza color.
+#' @param color Color de acento para borde lateral, icono y botón; no indica cumplimiento del KPI.
+#' @param color_kpi,color_footer Overrides opcionales; NULL usa negro para el KPI y gris para el footer.
 #' @param footer Texto o contenido Shiny opcional del pie.
 #' @param label_boton,icono_boton Etiqueta e icono del botón situado abajo a la derecha.
 #' @param mostrar_kpi Mostrar el valor reactivo; FALSE permite tarjetas informativas sin servidor.
+#' @param id_boton ID local de la acción; detalle conserva la API anterior.
 #' @details Conserva los argumentos posicionales e IDs del módulo trasladado desde racafeShiny.
 #'   Desde 0.5.0 usa borde lateral y botón inferior opcional, manteniendo IDs y click_detalle.
 #'   Los colores específicos prevalecen sobre color. La aplicación decide qué hacer con el evento.
@@ -25,15 +26,16 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
                          mostrar_boton = TRUE, color_borde = NULL, color_icono = NULL,
                          detalle = NULL, compact = FALSE, color = "#DA291C", color_kpi = NULL,
                          color_footer = NULL, footer = NULL, label_boton = "Ver detalle",
-                         icono_boton = "arrow-right", mostrar_kpi = TRUE) {
+                         icono_boton = "arrow-right", mostrar_kpi = TRUE, id_boton = "detalle") {
   for (flag in list(compact, mostrar_boton, mostrar_kpi)) {
     if (!is.logical(flag) || length(flag) != 1L || is.na(flag)) stop("Estado l\u00f3gico inv\u00e1lido.", call. = FALSE)
   }
   color <- .cv_color(color)
   color_borde <- if (is.null(color_borde)) color else .cv_color(color_borde)
   color_icono <- if (is.null(color_icono)) color else .cv_color(color_icono)
-  color_kpi <- if (is.null(color_kpi)) color else .cv_color(color_kpi)
-  color_footer <- if (is.null(color_footer)) color else .cv_color(color_footer)
+  color_kpi <- if (is.null(color_kpi)) "#000000" else .cv_color(color_kpi)
+  color_footer <- if (is.null(color_footer)) "#667085" else .cv_color(color_footer)
+  .cv_button_id(id_boton)
   ns <- shiny::NS(id)
   card <- shiny::tags$div(class = paste("racafe-caja-valor rmcv-card", if (compact) "rmcv-card--compact"),
     style = paste0("--rmcv-color:", color, ";--rmcv-border:", color_borde, ";--rmcv-icon:", color_icono,
@@ -46,10 +48,10 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
     if (!is.null(detalle)) shiny::tags$div(class = "rmcv-detail", detalle),
     if (!is.null(footer) || mostrar_boton) shiny::tags$div(class = "rmcv-footer",
       if (!is.null(footer)) shiny::tags$div(class = "rmcv-footer-content", footer),
-      if (mostrar_boton) shiny::actionButton(ns("detalle"), label = label_boton, icon = shiny::icon(icono_boton),
+      if (mostrar_boton) shiny::actionButton(ns(id_boton), label = label_boton, icon = shiny::icon(icono_boton),
         class = "rmcv-button",
         title = if (is.null(label_boton) || !nzchar(label_boton)) "Ver detalle" else label_boton)))
-  htmltools::attachDependencies(card, htmltools::htmlDependency("racafe-caja-valor", "0.5.0",
+  htmltools::attachDependencies(card, htmltools::htmlDependency("racafe-caja-valor", "0.5.1",
     src = c(file = system.file("caja-valor", package = "racafeModulos")), stylesheet = "caja-valor.css"))
 }
 
@@ -67,7 +69,10 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
 #' @param formato Formato registrado en racafeShiny::DefinirFormato.
 #' @param meta Meta numérica opcional; NA desactiva el color condicional.
 #' @param empty Texto opcional para valor NULL/NA; NULL conserva la suspensión del output anterior.
-#' @param color Color explícito opcional del valor; NULL hereda color_kpi de la UI. meta conserva su color condicional.
+#' @param color Color explícito opcional del valor; NULL hereda el negro de UI o un color_kpi explícito.
+#' @param prop TRUE: mayor o igual a meta es mejor; FALSE: menor o igual es mejor.
+#' @param id_boton ID local de la acción, igual al declarado en UI.
+#' @details Sin meta no se aplica rojo/verde. La comparación usa las unidades originales del valor y la meta.
 #' @return Lista con click_detalle, reactivo del botón de detalle.
 #' @details Conserva valores, formatos y eventos del módulo anterior de racafeShiny.
 #' @examples
@@ -80,7 +85,14 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
 #' shiny::shinyApp(ui, server)
 #' }
 #' @export
-cajaValor_server <- function(id, valor_r, formato, meta = NA, empty = NULL, color = NULL) {
+cajaValor_server <- function(id, valor_r, formato, meta = NA, empty = NULL, color = NULL,
+                             prop = TRUE, id_boton = "detalle") {
+  .cv_button_id(id_boton)
+  if (!is.logical(prop) || length(prop) != 1L || is.na(prop)) stop("prop debe ser l\u00f3gico.", call. = FALSE)
+  if (length(meta) != 1L || !(is.numeric(meta) || (is.logical(meta) && is.na(meta))) ||
+      (!is.na(meta) && !is.finite(meta))) {
+    stop("meta debe ser num\u00e9rica escalar o NA.", call. = FALSE)
+  }
   if (!is.null(color)) color <- .cv_color(color)
   if (!is.null(empty) && (!is.character(empty) || length(empty) != 1L || is.na(empty))) {
     stop("empty debe ser un texto escalar.", call. = FALSE)
@@ -93,11 +105,24 @@ cajaValor_server <- function(id, valor_r, formato, meta = NA, empty = NULL, colo
         return(shiny::tags$span(as.vector(empty, mode = "character")))
       }
       shiny::req(value)
-      racafeShiny::FormatearNumero(value, formato, meta = meta, color = if (is.null(color)) "inherit" else color)
+      kpi_color <- if (is.null(color)) "inherit" else color
+      if (!is.na(meta)) {
+        cumple <- if (prop) value >= meta else value <= meta
+        kpi_color <- if (cumple) "#1A7A5E" else "#C0392B"
+      }
+      racafeShiny::FormatearNumero(value, formato, color = kpi_color)
     })
 
     list(
-      click_detalle = shiny::reactive(input$detalle)
+      click_detalle = shiny::reactive(input[[id_boton]])
     )
   })
+}
+
+# ID LOCAL DE LA ACCION ----
+.cv_button_id <- function(id_boton) {
+  if (!is.character(id_boton) || length(id_boton) != 1L || is.na(id_boton) || !nzchar(id_boton)) {
+    stop("id_boton debe ser un texto no vac\u00edo.", call. = FALSE)
+  }
+  invisible(id_boton)
 }

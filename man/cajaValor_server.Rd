@@ -4,7 +4,16 @@
 \alias{cajaValor_server}
 \title{Servidor del módulo CajaValor}
 \usage{
-cajaValor_server(id, valor_r, formato, meta = NA, empty = NULL, color = NULL)
+cajaValor_server(
+  id,
+  valor_r,
+  formato,
+  meta = NA,
+  empty = NULL,
+  color = NULL,
+  prop = TRUE,
+  id_boton = "detalle"
+)
 }
 \arguments{
 \item{id}{ID local del módulo.}
@@ -17,7 +26,11 @@ cajaValor_server(id, valor_r, formato, meta = NA, empty = NULL, color = NULL)
 
 \item{empty}{Texto opcional para valor NULL/NA; NULL conserva la suspensión del output anterior.}
 
-\item{color}{Color explícito opcional del valor; NULL hereda color_kpi de la UI. meta conserva su color condicional.}
+\item{color}{Color explícito opcional del valor; NULL hereda el negro de UI o un color_kpi explícito.}
+
+\item{prop}{TRUE: mayor o igual a meta es mejor; FALSE: menor o igual es mejor.}
+
+\item{id_boton}{ID local de la acción, igual al declarado en UI.}
 }
 \value{
 Lista con click_detalle, reactivo del botón de detalle.
@@ -26,6 +39,8 @@ Lista con click_detalle, reactivo del botón de detalle.
 Servidor del módulo CajaValor
 }
 \details{
+Sin meta no se aplica rojo/verde. La comparación usa las unidades originales del valor y la meta.
+
 Conserva valores, formatos y eventos del módulo anterior de racafeShiny.
 }
 \examples{

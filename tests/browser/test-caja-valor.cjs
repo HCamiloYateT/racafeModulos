@@ -15,16 +15,16 @@ const {chromium} = require('playwright');
       color:s.borderLeftColor,top:s.borderTopWidth,right:s.borderRightWidth,bottom:s.borderBottomWidth,
       background:s.backgroundColor,shadow:s.boxShadow};});
     check(style.left==='3px'&&style.color==='rgb(218, 41, 28)', 'Borde lateral rojo');
-    check(style.top==='0px'&&style.right==='0px'&&style.bottom==='0px','Sin contorno completo');
+    check(style.top==='1px'&&style.right==='1px'&&style.bottom==='1px','Contorno completo de un pixel');
     check(style.background==='rgb(255, 255, 255)'&&style.shadow!=='none','Fondo claro y sombra suave');
-    check(await red.locator('.rmcv-title').evaluate(el=>getComputedStyle(el).color==='rgb(218, 41, 28)'),
-      'Título con color principal');
-    check(await red.locator('.rmcv-value span').evaluate(el=>getComputedStyle(el).color==='rgb(218, 41, 28)'),
-      'Valor KPI hereda color de tarjeta');
-    check(await blue.locator('.rmcv-value span').evaluate(el=>getComputedStyle(el).color==='rgb(36, 90, 129)'),
-      'Color principal configurable');
-    check(await blue.locator('.rmcv-footer-content').evaluate(el=>getComputedStyle(el).color==='rgb(36, 90, 129)'),
-      'Footer hereda color principal');
+    check(await red.locator('.rmcv-title').evaluate(el=>getComputedStyle(el).color==='rgb(52, 64, 84)'),
+      'Título neutral');
+    check(await red.locator('.rmcv-value span').evaluate(el=>getComputedStyle(el).color==='rgb(0, 0, 0)'),
+      'Valor KPI negro sin meta');
+    check(await blue.locator('.rmcv-value span').evaluate(el=>getComputedStyle(el).color==='rgb(0, 0, 0)'),
+      'Acento azul no colorea el valor');
+    check(await blue.locator('.rmcv-footer-content').evaluate(el=>getComputedStyle(el).color==='rgb(102, 112, 133)'),
+      'Footer neutral por defecto');
     check(await green.locator('.rmcv-value span').evaluate(el=>getComputedStyle(el).color==='rgb(52, 64, 84)'),
       'Color KPI independiente');
     check(await green.locator('.rmcv-footer-content').evaluate(el=>getComputedStyle(el).color==='rgb(102, 112, 133)'),

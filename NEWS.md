@@ -1,3 +1,10 @@
+# 0.5.1 — Color de KPI y acciones visibles
+
+- Usa negro para valores sin meta y texto neutral; color se reserva al acento de borde/icono/botón.
+- Añade prop: TRUE evalúa mayor/mejor y FALSE menor/mejor, con igualdad incluida y meta cero válida.
+- Restituye el contorno completo de 1px y conserva el borde lateral de 3px.
+- Añade id_boton para conectar el botón a eventos existentes, manteniendo detalle como default.
+
 # 0.5.0 — Tarjetas con borde lateral y acciones
 
 - Rediseña cajaValor_ui con fondo claro, sombra suave, título/icono y borde lateral de color.
