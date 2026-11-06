@@ -1,3 +1,9 @@
+# 0.3.1 — Presentación de encabezados
+
+- Ordena listados con títulos a todo el ancho, metadatos y badges debajo del contenido.
+- Centraliza el desplazamiento en el contenido del menú; encabezado y pie permanecen visibles.
+- Mejora espaciado y legibilidad de formularios e indicadores dentro del navbar, sin CSS global.
+
 # 0.3.0 — Módulo CajaValor
 
 - Incorpora cajaValor_ui y cajaValor_server, trasladados desde racafeShiny sin cambiar HTML ni argumentos.

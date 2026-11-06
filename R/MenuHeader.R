@@ -77,7 +77,9 @@ MenuHeaderUI <- function(id, icon, min_width = "280px", title = NULL, button_siz
     shiny::tags$a(class = "nav-link rmh-trigger", `data-toggle` = "dropdown", href = "#",
       `aria-expanded` = "false", title = title, icon, shiny::uiOutput(ns("badge"), inline = TRUE)),
     shiny::tags$div(class = "dropdown-menu dropdown-menu-lg dropdown-menu-right rmh-panel",
-      shiny::uiOutput(ns("header_ui")), shiny::uiOutput(ns("contenido_ui")), shiny::uiOutput(ns("footer_ui"))))
+      htmltools::tagAppendAttributes(shiny::uiOutput(ns("header_ui")), class = "rmh-heading"),
+      htmltools::tagAppendAttributes(shiny::uiOutput(ns("contenido_ui")), class = "rmh-content"),
+      htmltools::tagAppendAttributes(shiny::uiOutput(ns("footer_ui")), class = "rmh-footer")))
   htmltools::attachDependencies(tag, .mh_dependency())
 }
 
@@ -602,7 +604,7 @@ DemoMenuHeader <- function(corporate = FALSE) {
 
 # DEPENDENCIAS Y SELECCION DE LISTAS ----
 .mh_dependency <- function() {
-  htmltools::htmlDependency("racafe-menu-header", "0.2.0",
+  htmltools::htmlDependency("racafe-menu-header", "0.3.1",
     src = c(file = system.file("menu-header", package = "racafeModulos")),
     stylesheet = "header.css", script = "header.js")
 }
