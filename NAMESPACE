@@ -19,3 +19,6 @@ export(ListaDesplegableAgregable)
 export(ListaDesplegableAgregableUI)
 export(TarjetaUI)
 export(Tarjeta)
+
+export(cajaValor_server)
+export(cajaValor_ui)

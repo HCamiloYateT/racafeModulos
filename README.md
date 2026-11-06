@@ -380,3 +380,24 @@ incluye instalación completa, matriz de APIs y uso del loader con on.exit/final
 Pruebas: `testthat::test_local()` y `tests/browser/test-navbar-components.cjs` (Playwright).
 Para la prueba de navegador iniciar la galería, establecer `RACAFE_NAVBAR_URL` y `CHROMIUM_PATH`,
 y ejecutar `node tests/browser/test-navbar-components.cjs` con Playwright disponible en NODE_PATH.
+
+## Módulo CajaValor (0.3.0)
+
+`racafeModulos::cajaValor_ui()` y `racafeModulos::cajaValor_server()` son ahora las implementaciones
+canónicas del módulo. Se mantienen los mismos argumentos, HTML, formato numérico, meta y retorno
+`click_detalle`. La dependencia del formato sigue siendo racafeShiny >= 1.3.0.
+
+```r
+ui <- shiny::fluidPage(racafeModulos::cajaValor_ui("ventas", texto = "Ventas"))
+server <- function(input, output, session) {
+  modulo <- racafeModulos::cajaValor_server("ventas", shiny::reactive(1234.56), "numero")
+  shiny::observeEvent(modulo$click_detalle(), shiny::showNotification("Detalle"))
+}
+shiny::shinyApp(ui, server)
+```
+
+Para migrar una aplicación basta cambiar `racafeShiny::cajaValor_` por `racafeModulos::cajaValor_`
+en ambas llamadas. racafeShiny 1.3.1 conserva alias que delegan en este paquete; requieren
+racafeModulos >= 0.3.0, sin introducir un import obligatorio desde racafeShiny al módulo.
+Instale primero racafeShiny/racafeForms y después racafeModulos. No se necesitan cambios de IDs
+ni de observers en la aplicación. Consulte `?racafeModulos::cajaValor_server`.

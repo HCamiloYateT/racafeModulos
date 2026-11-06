@@ -1,3 +1,9 @@
+# 0.3.0 — Módulo CajaValor
+
+- Incorpora cajaValor_ui y cajaValor_server, trasladados desde racafeShiny sin cambiar HTML ni argumentos.
+- Reutiliza racafeShiny::FormatearNumero y conserva el evento click_detalle.
+- Prueba valores reactivos, cero, metas y namespaces independientes.
+
 # 0.2.0 — Navbar corporativo
 
 - Amplía MenuHeader sin duplicar módulos: li directo, listas reactivas, selección segura y retención configurable.
