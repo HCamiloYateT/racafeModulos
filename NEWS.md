@@ -1,3 +1,8 @@
+# 0.4.1 — Cajas compactas
+
+- Añade compact opcional para reducir padding, separación entre líneas, iconos y valores.
+- Conserva el tamaño anterior cuando compact no se solicita.
+
 # 0.4.0 — Cajas corporativas de cliente
 
 - cajaValor_ui acepta color_borde, color_icono y detalle opcionales; sus valores por defecto conservan la apariencia.
