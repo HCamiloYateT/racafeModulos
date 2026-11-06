@@ -431,7 +431,7 @@ con iconos, valores y detalles más pequeños. FALSE utiliza la densidad normal 
 ## Tarjetas corporativas (0.5.0)
 
 Fondo claro, sombra suave, borde lateral de 3px, título con icono y botón opcional abajo a la derecha.
-`color` define el acento del título, borde, icono, KPI y footer. `color_kpi` y `color_footer` permiten
+`color` define el acento del borde, icono y botón. KPI negro y footer gris por defecto; `color_kpi` y `color_footer` permiten
 colores independientes. color_borde/color_icono se conservan. CSS limitado a `.rmcv-card`.
 
 ```r
@@ -454,7 +454,7 @@ La tarjeta emite el evento y la aplicación define la acción. `mostrar_boton = 
 Con footer NULL y botón oculto se omite el pie. Para tarjetas informativas usar mostrar_kpi = FALSE,
 mostrar_boton = FALSE y detalle como descripción; no necesitan cajaValor_server.
 
-El valor hereda color_kpi salvo color explícito en cajaValor_server. meta conserva su color condicional.
+Sin meta, el valor es negro salvo override explícito. Con meta, prop = TRUE usa mayor/mejor y FALSE menor/mejor.
 Footer admite texto o tags Shiny, incluidos outputs reactivos del consumidor. Se conservan los IDs
 valor_display/detalle, namespaces y retorno click_detalle; cambia la presentación.
 
@@ -464,3 +464,17 @@ shiny::runApp(system.file("examples/caja-valor", package = "racafeModulos"))
 
 Pruebas: testthat::test_local() y tests/browser/test-caja-valor.cjs con Playwright/Chromium.
 Iniciar la demo en 4102 o indicar RACAFE_CARDS_URL; usar CHROMIUM_PATH y NODE_PATH como en las otras pruebas.
+
+## Metas y acciones existentes (0.5.1)
+
+```r
+# Directo: 95 cumple la meta 90.
+racafeModulos::cajaValor_server("cumplimiento", shiny::reactive(95), "numero", meta = 90, prop = TRUE)
+# Inverso: menos incidencias es mejor; cero cumple la meta cero.
+racafeModulos::cajaValor_server("incidencias", shiny::reactive(0), "entero", meta = 0, prop = FALSE)
+```
+
+La comparación incluye igualdad y requiere las mismas unidades en valor/meta. Sin meta se conserva negro;
+solo una meta configurada aplica automáticamente verde/rojo. Los overrides de color explícitos siguen disponibles.
+`id_boton = "btn_abrir"` en UI y server permite reutilizar el evento de un CajaModal existente sin JS manual.
+Las tarjetas tienen contorno completo gris de 1px y acento lateral configurable de 3px.

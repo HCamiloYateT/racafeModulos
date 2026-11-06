@@ -1,22 +1,22 @@
-# CajaValor 0.5.0: apariencia y acciones
+# CajaValor 0.5.1: apariencia y acciones
 
-La presentación usa el patrón de tarjeta informativa corporativa: fondo blanco, borde lateral de 3px,
+La presentación usa el patrón de tarjeta informativa corporativa: fondo blanco, contorno completo de 1px y borde lateral de 3px,
 sombra suave, título con icono y contenido legible. El botón se mueve del encabezado al pie inferior derecho.
 Los IDs y el evento click_detalle se mantienen; no se incorpora navegación ni reglas de negocio en el módulo.
 
 | Parámetro | Zona o comportamiento |
 | --- | --- |
-| color | Acento principal: borde, título, icono y defaults de KPI/footer |
+| color | Acento para borde lateral, icono y botón |
 | color_borde, color_icono | Overrides de los dos colores anteriores |
-| color_kpi, color_footer | Overrides independientes del valor y el pie |
+| color_kpi, color_footer | Overrides del valor y pie; negro/gris por defecto |
 | footer | Contenido opcional de pie; admite texto o tags/outputs Shiny |
 | mostrar_boton | Incluye/omite el botón detalle; conserva su ID |
 | label_boton, icono_boton | Texto e icono de la acción |
 | mostrar_kpi | FALSE permite tarjetas informativas sin registrar servidor |
 | compact | Densidad compacta para dashboards |
 
-cajaValor_server admite color opcional explícito; NULL hereda el color de UI. La condición meta mantiene
-su prioridad. El tratamiento opcional empty sigue distinguiendo valores desconocidos de cero.
+cajaValor_server admite color opcional explícito; NULL hereda el color de UI. Con meta, prop TRUE representa mayor/mejor y FALSE menor/mejor; igualdad cumple en ambos casos.
+La comparación usa unidades originales y admite meta cero. Sin meta no hay rojo/verde automático. El tratamiento opcional empty sigue distinguiendo valores desconocidos de cero.
 
 La aplicación observa modulo$click_detalle() para llamar showModal, updateTabItems u otra acción autorizada.
 Si mostrar_boton es FALSE no se genera ningún botón. No se añaden listeners JavaScript ni eventos propios.

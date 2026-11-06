@@ -19,7 +19,8 @@ cajaValor_ui(
   footer = NULL,
   label_boton = "Ver detalle",
   icono_boton = "arrow-right",
-  mostrar_kpi = TRUE
+  mostrar_kpi = TRUE,
+  id_boton = "detalle"
 )
 }
 \arguments{
@@ -39,15 +40,17 @@ cajaValor_ui(
 
 \item{compact}{Reducir padding, separación vertical e icono; FALSE utiliza la densidad normal.}
 
-\item{color}{Color principal para borde lateral, título, icono, KPI y footer.}
+\item{color}{Color de acento para borde lateral, icono y botón; no indica cumplimiento del KPI.}
 
-\item{color_kpi, color_footer}{Colores opcionales por zona; NULL utiliza color.}
+\item{color_kpi, color_footer}{Overrides opcionales; NULL usa negro para el KPI y gris para el footer.}
 
 \item{footer}{Texto o contenido Shiny opcional del pie.}
 
 \item{label_boton, icono_boton}{Etiqueta e icono del botón situado abajo a la derecha.}
 
 \item{mostrar_kpi}{Mostrar el valor reactivo; FALSE permite tarjetas informativas sin servidor.}
+
+\item{id_boton}{ID local de la acción; detalle conserva la API anterior.}
 }
 \value{
 Contenedor con outputs y botón namespaced.
