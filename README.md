@@ -408,3 +408,17 @@ MenuHeader presenta los elementos racafeListItem con título a todo el ancho y b
 El contenido es la única zona desplazable, incluso cuando incluye racafeListGroup; el encabezado y el
 footer permanecen visibles. Los estilos están limitados a `.rmh-panel` y no afectan listas fuera del navbar.
 Los IDs, argumentos, selección, teclado y retención de menús conservan su comportamiento.
+
+## Cajas con borde e icono (0.4.0)
+
+```r
+racafeModulos::cajaValor_ui("pedidos", icono = "cart-shopping", texto = "Pedidos", mostrar_boton = FALSE,
+  color_borde = "#DA291C", color_icono = "#DA291C", detalle = "Creación: 06/11/2026")
+# Dentro del servidor:
+# racafeModulos::cajaValor_server("pedidos", shiny::reactive(2), "entero", empty = "—")
+```
+
+Los colores y el detalle son opcionales. Sin ellos se conserva la caja anterior. `empty` también es opcional:
+el default mantiene la suspensión del output para NULL/NA; si se proporciona texto, lo muestra sin confundir
+un valor desconocido con cero. Los módulos deben registrarse una sola vez y recibir un reactive para actualizarse.
+En un módulo padre, utilice `ns("pedidos")` en UI y el ID local `"pedidos"` en server.

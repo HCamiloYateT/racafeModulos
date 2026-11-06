@@ -4,7 +4,15 @@
 \alias{cajaValor_ui}
 \title{UI del módulo CajaValor}
 \usage{
-cajaValor_ui(id, icono = "chart-line", texto = "", mostrar_boton = TRUE)
+cajaValor_ui(
+  id,
+  icono = "chart-line",
+  texto = "",
+  mostrar_boton = TRUE,
+  color_borde = NULL,
+  color_icono = NULL,
+  detalle = NULL
+)
 }
 \arguments{
 \item{id}{ID del módulo Shiny.}
@@ -14,6 +22,12 @@ cajaValor_ui(id, icono = "chart-line", texto = "", mostrar_boton = TRUE)
 \item{texto}{Etiqueta descriptiva.}
 
 \item{mostrar_boton}{Mostrar el botón de detalle.}
+
+\item{color_borde}{Color CSS opcional para dibujar borde; NULL conserva la caja anterior.}
+
+\item{color_icono}{Color CSS opcional del icono; NULL conserva el verde anterior.}
+
+\item{detalle}{Texto o contenido Shiny opcional debajo del valor.}
 }
 \value{
 Contenedor con outputs y botón namespaced.
