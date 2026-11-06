@@ -4,7 +4,7 @@
 \alias{cajaValor_server}
 \title{Servidor del módulo CajaValor}
 \usage{
-cajaValor_server(id, valor_r, formato, meta = NA, empty = NULL)
+cajaValor_server(id, valor_r, formato, meta = NA, empty = NULL, color = NULL)
 }
 \arguments{
 \item{id}{ID local del módulo.}
@@ -16,6 +16,8 @@ cajaValor_server(id, valor_r, formato, meta = NA, empty = NULL)
 \item{meta}{Meta numérica opcional; NA desactiva el color condicional.}
 
 \item{empty}{Texto opcional para valor NULL/NA; NULL conserva la suspensión del output anterior.}
+
+\item{color}{Color explícito opcional del valor; NULL hereda color_kpi de la UI. meta conserva su color condicional.}
 }
 \value{
 Lista con click_detalle, reactivo del botón de detalle.

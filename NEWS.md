@@ -1,3 +1,12 @@
+# 0.5.0 — Tarjetas con borde lateral y acciones
+
+- Rediseña cajaValor_ui con fondo claro, sombra suave, título/icono y borde lateral de color.
+- Sitúa el botón opcional en el footer, conservando ID y click_detalle para navegación o modales.
+- Añade color, color_kpi, color_footer y footer; mantiene los overrides color_borde/color_icono.
+- Permite tarjetas informativas sin KPI con mostrar_kpi = FALSE y conserva compact.
+- El valor hereda el color de UI salvo override explícito o color condicional por meta.
+- Incluye demo, ayuda RStudio y pruebas de navegador de acciones, colores y vista móvil.
+
 # 0.4.1 — Cajas compactas
 
 - Añade compact opcional para reducir padding, separación entre líneas, iconos y valores.

@@ -6,69 +6,59 @@
 #' @param texto Etiqueta descriptiva.
 #' @param mostrar_boton Mostrar el botón de detalle.
 #' @return Contenedor con outputs y botón namespaced.
-#' @param color_borde Color CSS opcional para dibujar borde; NULL conserva la caja anterior.
-#' @param color_icono Color CSS opcional del icono; NULL conserva el verde anterior.
+#' @param color_borde Color CSS opcional del borde lateral; NULL utiliza color.
+#' @param color_icono Color CSS opcional del icono; NULL utiliza color.
 #' @param detalle Texto o contenido Shiny opcional debajo del valor.
-#' @param compact Reducir padding, separación vertical e icono; FALSE conserva el tamaño anterior.
-#' @details Implementación trasladada desde racafeShiny sin cambiar su HTML ni sus argumentos.
+#' @param compact Reducir padding, separación vertical e icono; FALSE utiliza la densidad normal.
+#' @param color Color principal para borde lateral, título, icono, KPI y footer.
+#' @param color_kpi,color_footer Colores opcionales por zona; NULL utiliza color.
+#' @param footer Texto o contenido Shiny opcional del pie.
+#' @param label_boton,icono_boton Etiqueta e icono del botón situado abajo a la derecha.
+#' @param mostrar_kpi Mostrar el valor reactivo; FALSE permite tarjetas informativas sin servidor.
+#' @details Conserva los argumentos posicionales e IDs del módulo trasladado desde racafeShiny.
+#'   Desde 0.5.0 usa borde lateral y botón inferior opcional, manteniendo IDs y click_detalle.
+#'   Los colores específicos prevalecen sobre color. La aplicación decide qué hacer con el evento.
 #' @examples
 #' cajaValor_ui(shiny::NS("resumen")("ventas"), texto = "Ventas")
 #' @export
 cajaValor_ui <- function(id, icono = "chart-line", texto = "",
                          mostrar_boton = TRUE, color_borde = NULL, color_icono = NULL,
-                         detalle = NULL, compact = FALSE) {
-  if (!is.logical(compact) || length(compact) != 1L || is.na(compact)) {
-    stop("compact debe ser l\u00f3gico.", call. = FALSE)
+                         detalle = NULL, compact = FALSE, color = "#DA291C", color_kpi = NULL,
+                         color_footer = NULL, footer = NULL, label_boton = "Ver detalle",
+                         icono_boton = "arrow-right", mostrar_kpi = TRUE) {
+  for (flag in list(compact, mostrar_boton, mostrar_kpi)) {
+    if (!is.logical(flag) || length(flag) != 1L || is.na(flag)) stop("Estado l\u00f3gico inv\u00e1lido.", call. = FALSE)
   }
-  for (color in list(color_borde, color_icono)) {
-    if (!is.null(color) && (!is.character(color) || length(color) != 1L || is.na(color) ||
-        !nzchar(color) || grepl("[;{}<>]", color))) stop("Color CSS inv\u00e1lido.", call. = FALSE)
-  }
+  color <- .cv_color(color)
+  color_borde <- if (is.null(color_borde)) color else .cv_color(color_borde)
+  color_icono <- if (is.null(color_icono)) color else .cv_color(color_icono)
+  color_kpi <- if (is.null(color_kpi)) color else .cv_color(color_kpi)
+  color_footer <- if (is.null(color_footer)) color else .cv_color(color_footer)
   ns <- shiny::NS(id)
+  card <- shiny::tags$div(class = paste("racafe-caja-valor rmcv-card", if (compact) "rmcv-card--compact"),
+    style = paste0("--rmcv-color:", color, ";--rmcv-border:", color_borde, ";--rmcv-icon:", color_icono,
+      ";--rmcv-kpi:", color_kpi, ";--rmcv-footer:", color_footer, ";"),
+    shiny::tags$div(class = "rmcv-heading",
+      shiny::tags$div(class = "rmcv-heading-copy",
+        shiny::tags$div(class = "rmcv-icon", shiny::icon(icono)),
+        shiny::tags$div(class = "rmcv-title", texto))),
+    if (mostrar_kpi) shiny::tags$div(class = "rmcv-value", shiny::uiOutput(ns("valor_display"))),
+    if (!is.null(detalle)) shiny::tags$div(class = "rmcv-detail", detalle),
+    if (!is.null(footer) || mostrar_boton) shiny::tags$div(class = "rmcv-footer",
+      if (!is.null(footer)) shiny::tags$div(class = "rmcv-footer-content", footer),
+      if (mostrar_boton) shiny::actionButton(ns("detalle"), label = label_boton, icon = shiny::icon(icono_boton),
+        class = "rmcv-button",
+        title = if (is.null(label_boton) || !nzchar(label_boton)) "Ver detalle" else label_boton)))
+  htmltools::attachDependencies(card, htmltools::htmlDependency("racafe-caja-valor", "0.5.0",
+    src = c(file = system.file("caja-valor", package = "racafeModulos")), stylesheet = "caja-valor.css"))
+}
 
-  shiny::div(
-    class = "racafe-caja-valor",
-    style = paste(
-      if (compact) "background:white;border-radius:8px;padding:8px;" else
-        "background:white;border-radius:8px;padding:16px;",
-      "box-shadow:0 1px 4px rgba(0,0,0,0.08);",
-      if (compact) "display:flex;flex-direction:column;gap:3px;" else "display:flex;flex-direction:column;gap:8px;",
-      if (!is.null(color_borde)) paste0("border:1px solid ", color_borde, ";")
-    ),
-    shiny::div(
-      style = "display:flex;align-items:center;justify-content:space-between;",
-      shiny::div(
-        style = if (compact) "display:flex;align-items:center;gap:6px;line-height:1.2;" else
-          "display:flex;align-items:center;gap:10px;",
-        shiny::div(
-          style = paste0("color:", if (is.null(color_icono)) "#28B78D" else color_icono,
-            if (compact) ";font-size:1.2em;" else ";font-size:1.6em;"),
-          shiny::icon(icono)
-        ),
-        shiny::div(
-          style = "font-size:0.85em;color:#666;font-weight:500;",
-          texto
-        )
-      ),
-      if (mostrar_boton) {
-        shiny::actionButton(
-          inputId = ns("detalle"),
-          label   = NULL,
-          icon    = shiny::icon("magnifying-glass"),
-          class   = "btn btn-xs btn-outline-secondary",
-          style   = "padding:2px 6px;border-radius:4px;"
-        )
-      }
-    ),
-    shiny::div(
-      style = if (compact) "font-size:1.25em;font-weight:700;line-height:1.2;" else
-        "font-size:1.5em;font-weight:700;",
-      shiny::uiOutput(ns("valor_display"))
-    ),
-    if (!is.null(detalle)) shiny::tags$div(
-      style = if (compact) "font-size:10px;color:#667085;line-height:1.2;" else "font-size:11px;color:#667085;",
-      detalle)
-  )
+# COLOR CORPORATIVO DE TARJETAS ----
+.cv_color <- function(color) {
+  if (!is.character(color) || length(color) != 1L || is.na(color) || !nzchar(color) || grepl("[;{}<>]", color)) {
+    stop("Color CSS inv\u00e1lido.", call. = FALSE)
+  }
+  as.vector(color, mode = "character")
 }
 
 #' Servidor del módulo CajaValor
@@ -77,6 +67,7 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
 #' @param formato Formato registrado en racafeShiny::DefinirFormato.
 #' @param meta Meta numérica opcional; NA desactiva el color condicional.
 #' @param empty Texto opcional para valor NULL/NA; NULL conserva la suspensión del output anterior.
+#' @param color Color explícito opcional del valor; NULL hereda color_kpi de la UI. meta conserva su color condicional.
 #' @return Lista con click_detalle, reactivo del botón de detalle.
 #' @details Conserva valores, formatos y eventos del módulo anterior de racafeShiny.
 #' @examples
@@ -89,7 +80,8 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
 #' shiny::shinyApp(ui, server)
 #' }
 #' @export
-cajaValor_server <- function(id, valor_r, formato, meta = NA, empty = NULL) {
+cajaValor_server <- function(id, valor_r, formato, meta = NA, empty = NULL, color = NULL) {
+  if (!is.null(color)) color <- .cv_color(color)
   if (!is.null(empty) && (!is.character(empty) || length(empty) != 1L || is.na(empty))) {
     stop("empty debe ser un texto escalar.", call. = FALSE)
   }
@@ -101,7 +93,7 @@ cajaValor_server <- function(id, valor_r, formato, meta = NA, empty = NULL) {
         return(shiny::tags$span(as.vector(empty, mode = "character")))
       }
       shiny::req(value)
-      racafeShiny::FormatearNumero(value, formato, meta = meta)
+      racafeShiny::FormatearNumero(value, formato, meta = meta, color = if (is.null(color)) "inherit" else color)
     })
 
     list(
