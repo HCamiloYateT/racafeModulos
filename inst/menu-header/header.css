@@ -12,3 +12,30 @@
 .rmh-panel .shiny-html-output {min-width:0;}
 
 .rmh-tooltip {pointer-events:none;}
+
+/* JERARQUIA Y DESPLAZAMIENTO DEL PANEL ---- */
+.rmh-menu > .rmh-panel {padding:0;overflow:hidden;border:1px solid #e2e8f0;border-radius:8px;
+ box-shadow:0 8px 24px rgba(15,23,42,.14);font-family:var(--rf-body-font,Arial,sans-serif);color:#344054;}
+.rmh-menu > .rmh-panel.show {display:flex;flex-direction:column;}
+.rmh-panel > .rmh-heading,.rmh-panel > .rmh-footer {flex:0 0 auto;}
+.rmh-panel > .rmh-content {flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;
+ overscroll-behavior:contain;}
+.rmh-panel .rsh-list-group {max-height:none;overflow:visible;}
+.rmh-panel .rmh-content .rsh-list-item {flex-direction:column;align-items:stretch;gap:7px;padding:12px 14px;}
+.rmh-panel .rsh-list-copy {flex:0 1 auto;width:100%;}
+.rmh-panel .rsh-list-title {font-size:13px;font-weight:600;line-height:1.45;color:#1d2939;}
+.rmh-panel .rsh-list-subtitle {margin-top:3px;font-size:11px;line-height:1.5;color:#667085;}
+.rmh-panel .rsh-list-metadata {gap:3px 12px;margin-top:4px;font-size:11px;line-height:1.5;color:#667085;}
+.rmh-panel .rsh-list-badges {max-width:100%;justify-content:flex-start;align-items:center;gap:5px;}
+.rmh-panel .rsh-list-badges .rf-status-badge {font-size:10px;line-height:1.35;padding:3px 7px;
+ border-radius:5px;white-space:normal;overflow-wrap:anywhere;}
+.rmh-panel .rsh-list-group--dividers > .rsh-list-item + .rsh-list-item {border-top-color:#edf0f4;}
+.rmh-panel .dropdown-header {padding:11px 14px;text-align:left;font-size:12px;font-weight:600;color:#475467;}
+.rmh-panel .dropdown-divider {margin:0;border-top-color:#edf0f4;}
+.rmh-panel > .rmh-footer > .dropdown-footer {padding:10px 14px;font-size:12px;font-weight:600;color:var(--rf-red,#DA291C);
+ background:#f9fafb;border-top:1px solid #edf0f4;}
+.rmh-panel .rmh-content .rf-form {padding:12px 14px;margin:0;}
+.rmh-panel .rf-form .rf-group-title {margin:0 0 8px;font-weight:700;color:#344054;}
+.rmh-panel .rf-form-group + .rf-form-group {padding-top:12px;margin-top:12px;border-top:1px solid #edf0f4;}
+.rmh-panel .rf-form .rf-footer {margin-top:12px;padding-top:10px;border-top:1px solid #edf0f4;}
+.rmh-panel .gt_table td:last-child {white-space:nowrap;font-variant-numeric:tabular-nums;}

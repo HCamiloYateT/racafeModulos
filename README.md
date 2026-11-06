@@ -401,3 +401,10 @@ en ambas llamadas. racafeShiny 1.3.1 conserva alias que delegan en este paquete;
 racafeModulos >= 0.3.0, sin introducir un import obligatorio desde racafeShiny al módulo.
 Instale primero racafeShiny/racafeForms y después racafeModulos. No se necesitan cambios de IDs
 ni de observers en la aplicación. Consulte `?racafeModulos::cajaValor_server`.
+
+## Presentación de encabezados (0.3.1)
+
+MenuHeader presenta los elementos racafeListItem con título a todo el ancho y badges alineados debajo.
+El contenido es la única zona desplazable, incluso cuando incluye racafeListGroup; el encabezado y el
+footer permanecen visibles. Los estilos están limitados a `.rmh-panel` y no afectan listas fuera del navbar.
+Los IDs, argumentos, selección, teclado y retención de menús conservan su comportamiento.
