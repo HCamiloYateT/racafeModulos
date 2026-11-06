@@ -11,7 +11,8 @@ cajaValor_ui(
   mostrar_boton = TRUE,
   color_borde = NULL,
   color_icono = NULL,
-  detalle = NULL
+  detalle = NULL,
+  compact = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ cajaValor_ui(
 \item{color_icono}{Color CSS opcional del icono; NULL conserva el verde anterior.}
 
 \item{detalle}{Texto o contenido Shiny opcional debajo del valor.}
+
+\item{compact}{Reducir padding, separación vertical e icono; FALSE conserva el tamaño anterior.}
 }
 \value{
 Contenedor con outputs y botón namespaced.

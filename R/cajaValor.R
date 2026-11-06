@@ -9,12 +9,17 @@
 #' @param color_borde Color CSS opcional para dibujar borde; NULL conserva la caja anterior.
 #' @param color_icono Color CSS opcional del icono; NULL conserva el verde anterior.
 #' @param detalle Texto o contenido Shiny opcional debajo del valor.
+#' @param compact Reducir padding, separación vertical e icono; FALSE conserva el tamaño anterior.
 #' @details Implementación trasladada desde racafeShiny sin cambiar su HTML ni sus argumentos.
 #' @examples
 #' cajaValor_ui(shiny::NS("resumen")("ventas"), texto = "Ventas")
 #' @export
 cajaValor_ui <- function(id, icono = "chart-line", texto = "",
-                         mostrar_boton = TRUE, color_borde = NULL, color_icono = NULL, detalle = NULL) {
+                         mostrar_boton = TRUE, color_borde = NULL, color_icono = NULL,
+                         detalle = NULL, compact = FALSE) {
+  if (!is.logical(compact) || length(compact) != 1L || is.na(compact)) {
+    stop("compact debe ser l\u00f3gico.", call. = FALSE)
+  }
   for (color in list(color_borde, color_icono)) {
     if (!is.null(color) && (!is.character(color) || length(color) != 1L || is.na(color) ||
         !nzchar(color) || grepl("[;{}<>]", color))) stop("Color CSS inv\u00e1lido.", call. = FALSE)
@@ -24,17 +29,20 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
   shiny::div(
     class = "racafe-caja-valor",
     style = paste(
-      "background:white;border-radius:8px;padding:16px;",
+      if (compact) "background:white;border-radius:8px;padding:8px;" else
+        "background:white;border-radius:8px;padding:16px;",
       "box-shadow:0 1px 4px rgba(0,0,0,0.08);",
-      "display:flex;flex-direction:column;gap:8px;",
+      if (compact) "display:flex;flex-direction:column;gap:3px;" else "display:flex;flex-direction:column;gap:8px;",
       if (!is.null(color_borde)) paste0("border:1px solid ", color_borde, ";")
     ),
     shiny::div(
       style = "display:flex;align-items:center;justify-content:space-between;",
       shiny::div(
-        style = "display:flex;align-items:center;gap:10px;",
+        style = if (compact) "display:flex;align-items:center;gap:6px;line-height:1.2;" else
+          "display:flex;align-items:center;gap:10px;",
         shiny::div(
-          style = paste0("color:", if (is.null(color_icono)) "#28B78D" else color_icono, ";font-size:1.6em;"),
+          style = paste0("color:", if (is.null(color_icono)) "#28B78D" else color_icono,
+            if (compact) ";font-size:1.2em;" else ";font-size:1.6em;"),
           shiny::icon(icono)
         ),
         shiny::div(
@@ -53,10 +61,13 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
       }
     ),
     shiny::div(
-      style = "font-size:1.5em;font-weight:700;",
+      style = if (compact) "font-size:1.25em;font-weight:700;line-height:1.2;" else
+        "font-size:1.5em;font-weight:700;",
       shiny::uiOutput(ns("valor_display"))
     ),
-    if (!is.null(detalle)) shiny::tags$div(style = "font-size:11px;color:#667085;", detalle)
+    if (!is.null(detalle)) shiny::tags$div(
+      style = if (compact) "font-size:10px;color:#667085;line-height:1.2;" else "font-size:11px;color:#667085;",
+      detalle)
   )
 }
 

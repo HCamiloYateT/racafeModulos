@@ -422,3 +422,8 @@ Los colores y el detalle son opcionales. Sin ellos se conserva la caja anterior.
 el default mantiene la suspensión del output para NULL/NA; si se proporciona texto, lo muestra sin confundir
 un valor desconocido con cero. Los módulos deben registrarse una sola vez y recibir un reactive para actualizarse.
 En un módulo padre, utilice `ns("pedidos")` en UI y el ID local `"pedidos"` en server.
+
+## Densidad compacta (0.4.1)
+
+`cajaValor_ui(..., compact = TRUE)` reduce el padding de 16 a 8px y el espacio vertical de 8 a 3px,
+con iconos, valores y detalles más pequeños. FALSE conserva la presentación anterior.
