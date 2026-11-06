@@ -384,7 +384,7 @@ y ejecutar `node tests/browser/test-navbar-components.cjs` con Playwright dispon
 ## Módulo CajaValor (0.3.0)
 
 `racafeModulos::cajaValor_ui()` y `racafeModulos::cajaValor_server()` son ahora las implementaciones
-canónicas del módulo. Se mantienen los mismos argumentos, HTML, formato numérico, meta y retorno
+canónicas del módulo. Se mantienen los argumentos anteriores, IDs, formato numérico, meta y retorno
 `click_detalle`. La dependencia del formato sigue siendo racafeShiny >= 1.3.0.
 
 ```r
@@ -418,7 +418,7 @@ racafeModulos::cajaValor_ui("pedidos", icono = "cart-shopping", texto = "Pedidos
 # racafeModulos::cajaValor_server("pedidos", shiny::reactive(2), "entero", empty = "—")
 ```
 
-Los colores y el detalle son opcionales. Sin ellos se conserva la caja anterior. `empty` también es opcional:
+Los colores específicos y el detalle son opcionales. Desde 0.5.0 se utiliza la tarjeta con borde lateral. `empty` también es opcional:
 el default mantiene la suspensión del output para NULL/NA; si se proporciona texto, lo muestra sin confundir
 un valor desconocido con cero. Los módulos deben registrarse una sola vez y recibir un reactive para actualizarse.
 En un módulo padre, utilice `ns("pedidos")` en UI y el ID local `"pedidos"` en server.
@@ -426,4 +426,41 @@ En un módulo padre, utilice `ns("pedidos")` en UI y el ID local `"pedidos"` en 
 ## Densidad compacta (0.4.1)
 
 `cajaValor_ui(..., compact = TRUE)` reduce el padding de 16 a 8px y el espacio vertical de 8 a 3px,
-con iconos, valores y detalles más pequeños. FALSE conserva la presentación anterior.
+con iconos, valores y detalles más pequeños. FALSE utiliza la densidad normal del diseño actual.
+
+## Tarjetas corporativas (0.5.0)
+
+Fondo claro, sombra suave, borde lateral de 3px, título con icono y botón opcional abajo a la derecha.
+`color` define el acento del título, borde, icono, KPI y footer. `color_kpi` y `color_footer` permiten
+colores independientes. color_borde/color_icono se conservan. CSS limitado a `.rmcv-card`.
+
+```r
+ui <- shiny::fluidPage(
+  racafeModulos::cajaValor_ui("ventas", texto = "Ventas", icono = "chart-line", color = "#DA291C",
+    color_kpi = "#1F7A55", color_footer = "#667085", footer = "Acumulado del período",
+    label_boton = "Ver detalle", compact = TRUE)
+)
+server <- function(input, output, session) {
+  ventas <- racafeModulos::cajaValor_server("ventas", shiny::reactive(1234.56), "numero")
+  shiny::observeEvent(ventas$click_detalle(), {
+    shiny::showModal(racafeForms::racafeModalDetail("Ventas", shiny::p("Detalle definido por la aplicación")))
+  })
+}
+shiny::shinyApp(ui, server)
+```
+
+Para navegar, el observer puede llamar `bs4Dash::updateTabItems(session, "menu", "destino")`.
+La tarjeta emite el evento y la aplicación define la acción. `mostrar_boton = FALSE` elimina el control.
+Con footer NULL y botón oculto se omite el pie. Para tarjetas informativas usar mostrar_kpi = FALSE,
+mostrar_boton = FALSE y detalle como descripción; no necesitan cajaValor_server.
+
+El valor hereda color_kpi salvo color explícito en cajaValor_server. meta conserva su color condicional.
+Footer admite texto o tags Shiny, incluidos outputs reactivos del consumidor. Se conservan los IDs
+valor_display/detalle, namespaces y retorno click_detalle; cambia la presentación.
+
+```r
+shiny::runApp(system.file("examples/caja-valor", package = "racafeModulos"))
+```
+
+Pruebas: testthat::test_local() y tests/browser/test-caja-valor.cjs con Playwright/Chromium.
+Iniciar la demo en 4102 o indicar RACAFE_CARDS_URL; usar CHROMIUM_PATH y NODE_PATH como en las otras pruebas.

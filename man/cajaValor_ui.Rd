@@ -12,7 +12,14 @@ cajaValor_ui(
   color_borde = NULL,
   color_icono = NULL,
   detalle = NULL,
-  compact = FALSE
+  compact = FALSE,
+  color = "#DA291C",
+  color_kpi = NULL,
+  color_footer = NULL,
+  footer = NULL,
+  label_boton = "Ver detalle",
+  icono_boton = "arrow-right",
+  mostrar_kpi = TRUE
 )
 }
 \arguments{
@@ -24,13 +31,23 @@ cajaValor_ui(
 
 \item{mostrar_boton}{Mostrar el botón de detalle.}
 
-\item{color_borde}{Color CSS opcional para dibujar borde; NULL conserva la caja anterior.}
+\item{color_borde}{Color CSS opcional del borde lateral; NULL utiliza color.}
 
-\item{color_icono}{Color CSS opcional del icono; NULL conserva el verde anterior.}
+\item{color_icono}{Color CSS opcional del icono; NULL utiliza color.}
 
 \item{detalle}{Texto o contenido Shiny opcional debajo del valor.}
 
-\item{compact}{Reducir padding, separación vertical e icono; FALSE conserva el tamaño anterior.}
+\item{compact}{Reducir padding, separación vertical e icono; FALSE utiliza la densidad normal.}
+
+\item{color}{Color principal para borde lateral, título, icono, KPI y footer.}
+
+\item{color_kpi, color_footer}{Colores opcionales por zona; NULL utiliza color.}
+
+\item{footer}{Texto o contenido Shiny opcional del pie.}
+
+\item{label_boton, icono_boton}{Etiqueta e icono del botón situado abajo a la derecha.}
+
+\item{mostrar_kpi}{Mostrar el valor reactivo; FALSE permite tarjetas informativas sin servidor.}
 }
 \value{
 Contenedor con outputs y botón namespaced.
@@ -39,7 +56,9 @@ Contenedor con outputs y botón namespaced.
 UI del módulo CajaValor
 }
 \details{
-Implementación trasladada desde racafeShiny sin cambiar su HTML ni sus argumentos.
+Conserva los argumentos posicionales e IDs del módulo trasladado desde racafeShiny.
+Desde 0.5.0 usa borde lateral y botón inferior opcional, manteniendo IDs y click_detalle.
+Los colores específicos prevalecen sobre color. La aplicación decide qué hacer con el evento.
 }
 \examples{
 cajaValor_ui(shiny::NS("resumen")("ventas"), texto = "Ventas")

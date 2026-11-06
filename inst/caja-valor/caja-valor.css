@@ -1,0 +1,26 @@
+/* TARJETA CORPORATIVA ---- */
+.racafe-caja-valor.rmcv-card {box-sizing:border-box;display:flex;flex-direction:column;gap:6px;
+ min-width:0;height:100%;padding:12px 14px;border:0;border-left:3px solid var(--rmcv-border,#DA291C);
+ border-radius:6px;background:#fff;box-shadow:0 1px 5px rgba(16,24,40,.10);color:#344054;}
+.rmcv-card > .rmcv-heading {display:flex;align-items:center;min-width:0;}
+.rmcv-card .rmcv-heading-copy {display:flex;align-items:center;gap:8px;min-width:0;}
+.rmcv-card .rmcv-icon {flex:0 0 auto;font-size:14px;line-height:1;color:var(--rmcv-icon,#DA291C);}
+.rmcv-card .rmcv-title {font-size:12px;font-weight:600;line-height:1.4;color:var(--rmcv-color,#DA291C);
+ overflow-wrap:anywhere;min-width:0;}
+.rmcv-card > .rmcv-value {font-size:22px;font-weight:700;line-height:1.2;color:var(--rmcv-kpi,#DA291C);}
+.rmcv-card > .rmcv-value > .shiny-html-output {margin:0;min-width:0;}
+.rmcv-card > .rmcv-detail {font-size:12px;line-height:1.5;overflow-wrap:anywhere;}
+.rmcv-card > .rmcv-footer {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+ gap:6px 10px;margin-top:auto;padding-top:8px;min-width:0;color:var(--rmcv-footer,#DA291C);}
+.rmcv-card .rmcv-footer-content {min-width:0;font-size:11px;line-height:1.4;overflow-wrap:anywhere;}
+.rmcv-card .rmcv-button {display:inline-flex;align-items:center;justify-content:center;gap:5px;
+ flex:0 0 auto;margin-left:auto;padding:3px 8px;min-height:26px;border:1px solid currentColor;
+ border-radius:4px;background:#fff;color:var(--rmcv-footer,#DA291C);font-size:11px;line-height:1.3;cursor:pointer;}
+.rmcv-card .rmcv-button:hover {background:#f9fafb;}
+.rmcv-card .rmcv-button:focus-visible {outline:2px solid var(--rmcv-footer,#DA291C);outline-offset:2px;}
+.racafe-caja-valor.rmcv-card--compact {padding:8px 10px;gap:3px;}
+.rmcv-card--compact .rmcv-heading-copy {gap:6px;}
+.rmcv-card--compact .rmcv-icon {font-size:13px;}
+.rmcv-card--compact > .rmcv-value {font-size:18px;}
+.rmcv-card--compact > .rmcv-detail {font-size:11px;line-height:1.35;}
+.rmcv-card--compact > .rmcv-footer {padding-top:5px;}
