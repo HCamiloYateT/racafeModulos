@@ -22,11 +22,21 @@
 #' @examples
 #' cajaValor_ui(shiny::NS("resumen")("ventas"), texto = "Ventas")
 #' @export
+#' @param tooltip Texto accesible y hover del botón; NULL conserva la etiqueta anterior.
+#' @param button_size normal o icon; icon utiliza un botón compacto de 22 px.
+#' @param footer_position inside conserva el pie interior; outside lo coloca fuera de la tarjeta.
+#' @param nota_fn Función de presentación de la nota externa.
 cajaValor_ui <- function(id, icono = "chart-line", texto = "",
                          mostrar_boton = TRUE, color_borde = NULL, color_icono = NULL,
                          detalle = NULL, compact = FALSE, color = "#DA291C", color_kpi = NULL,
                          color_footer = NULL, footer = NULL, label_boton = "Ver detalle",
-                         icono_boton = "arrow-right", mostrar_kpi = TRUE, id_boton = "detalle") {
+                         icono_boton = "arrow-right", mostrar_kpi = TRUE, id_boton = "detalle",
+                         tooltip = NULL, button_size = c("normal", "icon"),
+                         footer_position = c("inside", "outside"), nota_fn = .vancouver_nota) {
+  button_size <- match.arg(button_size)
+  footer_position <- match.arg(footer_position)
+  footer_externo <- if (footer_position == "outside") footer else NULL
+  if (footer_position == "outside") footer <- NULL
   for (flag in list(compact, mostrar_boton, mostrar_kpi)) {
     if (!is.logical(flag) || length(flag) != 1L || is.na(flag)) stop("Estado l\u00f3gico inv\u00e1lido.", call. = FALSE)
   }
@@ -49,9 +59,17 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
     if (!is.null(footer) || mostrar_boton) shiny::tags$div(class = "rmcv-footer",
       if (!is.null(footer)) shiny::tags$div(class = "rmcv-footer-content", footer),
       if (mostrar_boton) shiny::actionButton(ns(id_boton), label = label_boton, icon = shiny::icon(icono_boton),
-        class = "rmcv-button",
-        title = if (is.null(label_boton) || !nzchar(label_boton)) "Ver detalle" else label_boton)))
-  htmltools::attachDependencies(card, htmltools::htmlDependency("racafe-caja-valor", "0.5.1",
+        class = if (button_size == "icon") "rmcv-button rmcv-button--icon" else "rmcv-button",
+        title = if (!is.null(tooltip)) tooltip else if (is.null(label_boton) || !nzchar(label_boton)) {
+          "Ver detalle"
+        } else label_boton)))
+  if (!is.null(tooltip)) {
+    card <- htmltools::tagQuery(card)$find(".rmcv-button")$addAttrs(`aria-label` = tooltip)$allTags()
+  }
+  if (footer_position == "outside") {
+    card <- shiny::tags$div(class = "rmcv-with-note", card, nota_fn(footer_externo))
+  }
+  htmltools::attachDependencies(card, htmltools::htmlDependency("racafe-caja-valor", "0.6.0",
     src = c(file = system.file("caja-valor", package = "racafeModulos")), stylesheet = "caja-valor.css"))
 }
 
@@ -85,9 +103,11 @@ cajaValor_ui <- function(id, icono = "chart-line", texto = "",
 #' shiny::shinyApp(ui, server)
 #' }
 #' @export
+#' @param formatear Callback opcional del valor; NULL conserva el formato y meta anteriores.
 cajaValor_server <- function(id, valor_r, formato, meta = NA, empty = NULL, color = NULL,
-                             prop = TRUE, id_boton = "detalle") {
+                             prop = TRUE, id_boton = "detalle", formatear = NULL) {
   .cv_button_id(id_boton)
+  if (!is.null(formatear) && !is.function(formatear)) stop("formatear debe ser una función.", call. = FALSE)
   if (!is.logical(prop) || length(prop) != 1L || is.na(prop)) stop("prop debe ser l\u00f3gico.", call. = FALSE)
   if (length(meta) != 1L || !(is.numeric(meta) || (is.logical(meta) && is.na(meta))) ||
       (!is.na(meta) && !is.finite(meta))) {
@@ -99,8 +119,10 @@ cajaValor_server <- function(id, valor_r, formato, meta = NA, empty = NULL, colo
   }
   shiny::moduleServer(id, function(input, output, session) {
 
-    output$valor_display <- shiny::renderUI({
+    render_valor <- if (is.null(formatear)) shiny::renderUI else racafeShiny::racafeRenderUI
+    output$valor_display <- render_valor({
       value <- valor_r()
+      if (!is.null(formatear)) return(formatear(value))
       if (!is.null(empty) && (!length(value) || (length(value) == 1L && is.na(value)))) {
         return(shiny::tags$span(as.vector(empty, mode = "character")))
       }

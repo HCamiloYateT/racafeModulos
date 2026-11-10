@@ -4,18 +4,12 @@
 \alias{cajaValor_server}
 \title{Servidor del módulo CajaValor}
 \usage{
-cajaValor_server(
-  id,
-  valor_r,
-  formato,
-  meta = NA,
-  empty = NULL,
-  color = NULL,
-  prop = TRUE,
-  id_boton = "detalle"
-)
+cajaValor_server(id, valor_r, formato, meta = NA, empty = NULL, color = NULL,
+                             prop = TRUE, id_boton = "detalle", formatear = NULL)
 }
 \arguments{
+\item{formatear}{Callback opcional; NULL conserva formatos y meta existentes.}
+
 \item{id}{ID local del módulo.}
 
 \item{valor_r}{Reactivo que devuelve el valor numérico.}
