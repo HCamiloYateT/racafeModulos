@@ -4,26 +4,20 @@
 \alias{cajaValor_ui}
 \title{UI del módulo CajaValor}
 \usage{
-cajaValor_ui(
-  id,
-  icono = "chart-line",
-  texto = "",
-  mostrar_boton = TRUE,
-  color_borde = NULL,
-  color_icono = NULL,
-  detalle = NULL,
-  compact = FALSE,
-  color = "#DA291C",
-  color_kpi = NULL,
-  color_footer = NULL,
-  footer = NULL,
-  label_boton = "Ver detalle",
-  icono_boton = "arrow-right",
-  mostrar_kpi = TRUE,
-  id_boton = "detalle"
-)
+cajaValor_ui(id, icono = "chart-line", texto = "",
+                         mostrar_boton = TRUE, color_borde = NULL, color_icono = NULL,
+                         detalle = NULL, compact = FALSE, color = "#DA291C", color_kpi = NULL,
+                         color_footer = NULL, footer = NULL, label_boton = "Ver detalle",
+                         icono_boton = "arrow-right", mostrar_kpi = TRUE, id_boton = "detalle",
+                         tooltip = NULL, button_size = c("normal", "icon"),
+                         footer_position = c("inside", "outside"), nota_fn = .vancouver_nota)
 }
 \arguments{
+\item{tooltip}{Texto accesible del botón; NULL conserva la etiqueta anterior.}
+\item{button_size}{normal conserva el tamaño; icon utiliza 22 px.}
+\item{footer_position}{inside conserva el pie interior; outside lo coloca fuera de la caja.}
+\item{nota_fn}{Callback de presentación de la nota externa.}
+
 \item{id}{ID del módulo Shiny.}
 
 \item{icono}{Nombre del icono FontAwesome.}

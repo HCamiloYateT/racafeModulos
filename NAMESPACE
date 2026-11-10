@@ -22,3 +22,18 @@ export(Tarjeta)
 
 export(cajaValor_server)
 export(cajaValor_ui)
+
+export(TablaVancouverUI)
+export(TablaVancouverDatos)
+export(TablaVancouverServer)
+export(TablaVancouver)
+export(TablaVancouverCeldas)
+
+export(cajaValorModal)
+
+export(MenuAccionesDependencies)
+export(MenuAccionesUI)
+
+export(TableroTareasTarjetas)
+export(ColumnaKanbanUI)
+export(TableroKanbanUI)
