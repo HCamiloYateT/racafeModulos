@@ -163,7 +163,17 @@ ListaDesplegableAgregable <- function(id, label = NULL, choices, selected = choi
       pending_r(NULL)
       racafeForms::racafeUpdateButton(session, "guardar_nuevo", loading = FALSE)
     })
-    list(seleccion = shiny::reactive(setdiff(selection_r(), "AGREGAR...")), choices = shiny::reactive(choices_r()))
+    actualizar <- function(choices, selected = character()) {
+      if (any(.lda_keys(choices) == "AGREGAR...")) stop("AGREGAR... es una opción reservada.")
+      valores <- intersect(as.character(selected), .lda_values(choices))
+      if (!multiple) valores <- if (length(valores)) valores[[1]] else ""
+      pending_r(NULL); mostrar_nuevo_r(FALSE); attempted_r(FALSE)
+      choices_r(choices); selection_r(valores)
+      racafeForms::racafeUpdateSelect(session, "sel", choices = .lda_picker_choices(choices, multiple, fem),
+        selected = valores)
+    }
+    list(seleccion = shiny::reactive(setdiff(selection_r(), "AGREGAR...")),
+      choices = shiny::reactive(choices_r()), actualizar = actualizar)
   })
 }
 
