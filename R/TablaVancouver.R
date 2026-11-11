@@ -31,6 +31,11 @@ TablaVancouverDatos <- function(datos, columnas = NULL, col_specs = NULL, col_la
                              preparar_fn = NULL, etiquetas_fn = function(x) stats::setNames(as.list(x), x),
                              tabla_fn = .vancouver_tabla,
                              texto_fn = identity) {
+  .celda <- function(fn, valor, indice, nombre) {
+    argumentos <- list(valor, indice, nombre)
+    if (!"..." %in% names(formals(fn))) argumentos <- head(argumentos, length(formals(fn)))
+    do.call(fn, argumentos)
+  }
   etiquetas_nit <- col_labels
   for (nombre in names(col_specs)) {
     if (!is.null(col_specs[[nombre]]$name)) etiquetas_nit[[nombre]] <- col_specs[[nombre]]$name
@@ -57,13 +62,26 @@ TablaVancouverDatos <- function(datos, columnas = NULL, col_specs = NULL, col_la
       }
     }
     if (is.function(spec$cell) && !grepl("nit", paste(nombre, etiquetas[[nombre]]), ignore.case = TRUE)) {
-      valores <- vapply(seq_len(nrow(datos)), function(i) as.character(spec$cell(datos[[nombre]][i])), character(1))
+      valores <- vapply(seq_len(nrow(datos)), function(i) {
+        valor <- .celda(spec$cell, datos[[nombre]][i], indices[[i]], nombre)
+        html <- isTRUE(spec$html) || inherits(valor, c("shiny.tag", "shiny.tag.list", "html"))
+        if (html) as.character(valor) else as.character(htmltools::htmlEscape(as.character(valor)))
+      }, character(1))
       tabla <- gt::text_transform(tabla, locations = gt::cells_body(columns = tidyselect::all_of(nombre)),
-        fn = local({ texto <- valores; function(x) htmltools::htmlEscape(texto) }))
+        fn = local({ texto <- valores; function(x) texto }))
+    }
+    if (isTRUE(spec$html) && !is.function(spec$cell)) {
+      tabla <- gt::text_transform(tabla, locations = gt::cells_body(columns = tidyselect::all_of(nombre)),
+        fn = local({ texto <- as.character(datos[[nombre]]); function(x) texto }))
+    }
+    if (!is.null(spec$align)) tabla <- gt::cols_align(tabla, align = spec$align, columns = tidyselect::all_of(nombre))
+    if (!is.null(spec$minWidth)) {
+      ancho <- rlang::new_formula(as.name(nombre), gt::px(spec$minWidth))
+      tabla <- do.call(gt::cols_width, list(tabla, ancho))
     }
     if (is.function(spec$style)) {
       for (i in seq_len(nrow(datos))) {
-        estilo <- spec$style(datos[[nombre]][i])
+        estilo <- .celda(spec$style, datos[[nombre]][i], indices[[i]], nombre)
         if (identical(estilo$color, "inherit")) estilo$color <- NULL
         estilos <- list()
         if (!is.null(estilo$background)) estilos <- c(estilos, list(gt::cell_fill(color = estilo$background)))
@@ -76,7 +94,7 @@ TablaVancouverDatos <- function(datos, columnas = NULL, col_specs = NULL, col_la
     }
   }
   if (!is.null(on_row) && length(visibles)) {
-    primera <- visibles[[1]]
+    primera <- setdiff(visibles, "Acciones")[[1]]
     enlaces <- vapply(seq_len(nrow(datos)), function(i) as.character(shiny::tags$button(type = "button",
       class = "btn btn-link crm-tabla-enlace", style = "padding:0;font:inherit;color:inherit;text-align:left;",
       onclick = on_row(indices[[i]]),
@@ -106,16 +124,18 @@ TablaVancouverServer <- function(id, data, columnas = NULL, col_specs = NULL, co
     pagina <- shiny::reactiveVal(1L)
     .val <- function(x) if (shiny::is.reactive(x)) x() else x
     .datos <- shiny::reactive({ .val(data) })
+    consulta_r <- shiny::debounce(shiny::reactive(input$buscar), 200)
     .filas <- shiny::reactive({
       datos <- .datos()
       shiny::req(is.data.frame(datos))
       indices <- seq_len(nrow(datos))
-      consulta <- if (searchable) input$buscar else NULL
+      consulta <- if (searchable) consulta_r() else NULL
       if (!is.null(consulta) && nzchar(trimws(consulta))) {
-        visibles <- if (is.null(columnas)) names(datos) else intersect(columnas, names(datos))
-        coincide <- vapply(indices, function(i) any(vapply(datos[visibles], function(col) {
-          grepl(tolower(consulta), tolower(as.character(col[[i]])), fixed = TRUE)
-        }, logical(1)), na.rm = TRUE), logical(1))
+        visibles <- if (is.null(.val(columnas))) names(datos) else intersect(.val(columnas), names(datos))
+        coincide <- rep(FALSE, nrow(datos))
+        for (col in datos[visibles]) {
+          coincide <- coincide | (!is.na(col) & grepl(tolower(consulta), tolower(as.character(col)), fixed = TRUE))
+        }
         indices <- indices[coincide]
       }
       actual <- orden()
@@ -128,7 +148,7 @@ TablaVancouverServer <- function(id, data, columnas = NULL, col_specs = NULL, co
       }
       indices
     })
-    shiny::observeEvent(list(.datos(), input$buscar), { pagina(1L); seleccion(NULL) }, ignoreInit = TRUE)
+    shiny::observeEvent(list(.datos(), consulta_r()), { pagina(1L); seleccion(NULL) }, ignoreInit = TRUE)
     shiny::observeEvent(input$ordenar, {
       shiny::req(sortable, input$ordenar %in% names(.datos()))
       anterior <- orden()
@@ -150,7 +170,7 @@ TablaVancouverServer <- function(id, data, columnas = NULL, col_specs = NULL, co
       shiny::tagList(
         if (!is.null(titulo)) shiny::tags$strong(.val(titulo)),
         if (!is.null(subtitulo)) shiny::tags$div(.val(subtitulo)),
-        TablaVancouverDatos(datos[indices, , drop = FALSE], columnas, col_specs, col_labels,
+        TablaVancouverDatos(datos[indices, , drop = FALSE], .val(columnas), .val(col_specs), .val(col_labels),
           on_row = if (modo_seleccion == "fila") function(i) .evento("seleccionar", i),
           on_sort = if (sortable) function(col) .evento("ordenar", col), indices = indices,
           preparar_fn = preparar_fn, etiquetas_fn = etiquetas_fn, tabla_fn = tabla_fn, texto_fn = texto_fn))
@@ -169,7 +189,7 @@ TablaVancouverServer <- function(id, data, columnas = NULL, col_specs = NULL, co
       shiny::req(modo_seleccion == "fila", length(fila) == 1L, fila %in% .filas())
       datos <- .datos()
       seleccion(list(modo = "fila", row = fila, id = if (!is.null(id_col)) datos[[id_col]][fila] else fila,
-        data = datos[fila, , drop = FALSE]))
+        data = datos[fila, , drop = FALSE], fila = datos[fila, , drop = FALSE]))
     })
     list(seleccion = shiny::reactive(seleccion()), modo = modo_seleccion, limpiar = function() seleccion(NULL))
   })
