@@ -1,5 +1,5 @@
 .tableros_dependencies <- function() {
-  htmltools::htmlDependency("racafe-tableros", "0.6.0",
+  htmltools::htmlDependency("racafe-tableros", "0.6.3",
     src = c(file = system.file("tableros", package = "racafeModulos")), stylesheet = "tableros.css")
 }
 # Presentación de tareas y Kanban con acciones delegadas ----
@@ -9,7 +9,7 @@ TableroTareasTarjetas <- function(datos, prioridades, actividades_fn, ns = ident
                                   campos = c(id = "Id", titulo = "Titulo", descripcion = "Descripcion",
                                     prioridad = "Prioridad", responsable = "Responsable", tipo = "Tipo",
                                     cumplido = "Cumplido", archivado = "Archivado", vencimiento = "FechaCumplimiento"),
-                                  nota_fn = .vancouver_nota) {
+                                  nota_fn = .vancouver_nota, colores = PaletaPrioridadesTareas()) {
   claves <- c(id = "cons", titulo = "titulo", descripcion = "Descripcion", prioridad = "Prioridad",
     responsable = "Responsable", tipo = "Tipo", cumplido = "Cumplido", archivado = "Archivado",
     vencimiento = "FechaCumplimiento")
@@ -62,20 +62,24 @@ TableroTareasTarjetas <- function(datos, prioridades, actividades_fn, ns = ident
             racafeForms::racafeInfoItem("Vencimiento", racafeForms::racafeDateLabel(fila$FechaCumplimiento[[1]])),
             boton)))
     })
-    shiny::tags$section(class = "rm-task-column",
-      shiny::tags$header(shiny::tags$strong(prioridad), racafeForms::racafeDataBadge("Registros", nrow(filas))),
-      if (!length(tarjetas)) nota_fn("Sin registros en esta prioridad.") else shiny::tagList(tarjetas))
+    color <- unname(colores[prioridad])
+    if (!length(color) || is.na(color)) color <- "#6C757D"
+    ColumnaKanbanUI(prioridad, cantidad = nrow(filas), color = color, header_filled = FALSE,
+      cuerpo = if (!length(tarjetas)) nota_fn("Sin registros en esta prioridad.") else shiny::tagList(tarjetas))
   })
-  htmltools::attachDependencies(shiny::tags$div(class = "rm-task-board", columnas),
-    .tableros_dependencies())
+  tablero <- TableroKanbanUI(columnas, ns = ns)
+  shiny::tagAppendAttributes(tablero, class = "rm-task-board-shared")
 }
 
 #' ColumnaKanbanUI: componente reutilizable del ecosistema Racafé
 #' @export
-ColumnaKanbanUI <- function(titulo, cuerpo, cantidad, color = "#495057", badges = NULL, acciones = NULL) {
+ColumnaKanbanUI <- function(titulo, cuerpo, cantidad, color = "#495057", badges = NULL, acciones = NULL,
+                            header_filled = TRUE) {
   color <- .cv_color(color)
-  shiny::tags$div(class = "kpb-col",
-    shiny::tags$div(class = "kpb-col-header", style = paste0("background:", color, ";"),
+  shiny::tags$div(class = paste("kpb-col", if (!header_filled) "kpb-col-outline"),
+    style = paste0("--kanban-color:", color, ";"),
+    shiny::tags$div(class = "kpb-col-header", style = if (header_filled) paste0("background:", color, ";") else
+      paste0("background:#fff;border-bottom:3px solid ", color, ";"),
       shiny::tags$div(class = "kpb-col-header-inner",
         shiny::tags$span(class = "kpb-col-titulo", titulo),
         shiny::tags$div(class = "kpb-col-badges",
@@ -88,4 +92,11 @@ TableroKanbanUI <- function(..., id = NULL, ns = identity) {
   htmltools::attachDependencies(shiny::tags$div(id = if (!is.null(id)) ns(id),
     `data-kanban-ns` = ns(""), class = "kpb-board", ...),
     list(MenuAccionesDependencies(), .tableros_dependencies()))
+}
+
+#' Colores compartidos de prioridad para tableros, tarjetas y convenciones
+#' @return Vector de colores nombrado por prioridad.
+#' @export
+PaletaPrioridadesTareas <- function() {
+  c(URGENTE = "#7A2028", IMPORTANTE = "#9B7160", MEDIA = "#C8A77D", BAJA = "#6C757D")
 }
