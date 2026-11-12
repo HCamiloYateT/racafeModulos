@@ -37,3 +37,5 @@ export(MenuAccionesUI)
 export(TableroTareasTarjetas)
 export(ColumnaKanbanUI)
 export(TableroKanbanUI)
+
+export(PaletaPrioridadesTareas)
