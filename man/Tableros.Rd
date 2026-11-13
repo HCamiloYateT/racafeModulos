@@ -3,14 +3,15 @@
 \alias{ColumnaKanbanUI}
 \alias{TableroKanbanUI}
 \title{Tarjetas y columnas de tableros}
-\description{Componentes de presentación sin consultas ni permisos de negocio. El consumidor filtra datos y procesa las acciones; las tarjetas de tareas envían abrir con la clave del registro.}
+\description{Componentes de presentación sin consultas ni permisos de negocio. El consumidor filtra datos y procesa las acciones; las tarjetas envían AccionTarea con la clave y acción. El consumidor confirma y valida antes de escribir.}
 \usage{
 TableroTareasTarjetas(datos, prioridades, actividades_fn, ns = identity,
                                   campos = c(id = "Id", titulo = "Titulo", descripcion = "Descripcion",
                                     prioridad = "Prioridad", responsable = "Responsable", tipo = "Tipo",
                                     cumplido = "Cumplido", archivado = "Archivado", vencimiento = "FechaCumplimiento"),
-                                  nota_fn = .vancouver_nota)
-ColumnaKanbanUI(titulo, cuerpo, cantidad, color = "#495057", badges = NULL, acciones = NULL)
+                                  nota_fn = .vancouver_nota, colores = PaletaPrioridadesTareas(),
+                                  acciones_fn = NULL, arrastrable = FALSE)
+ColumnaKanbanUI(titulo, cuerpo, cantidad, color = "#495057", badges = NULL, acciones = NULL, header_filled = TRUE)
 TableroKanbanUI(..., id = NULL, ns = identity)
 }
 \arguments{
@@ -20,6 +21,10 @@ TableroKanbanUI(..., id = NULL, ns = identity)
 \item{ns}{Función namespace opcional; los IDs ya namespaced no deben duplicarse.}
 \item{campos}{Mapa entre campos del componente y columnas del origen. El origen debe contener los campos declarados.}
 \item{nota_fn}{Callback que construye una nota externa; admite NULL para omitirla.}
+\item{colores}{Vector nombrado de colores por prioridad.}
+\item{acciones_fn}{Callback de presentación que devuelve acciones permitidas por fila. NULL muestra detalle.}
+\item{arrastrable}{Activa los eventos de arrastre hacia las otras prioridades. No escribe datos.}
+\item{header_filled}{Indica si el encabezado tiene fondo o solo borde de color.}
 \item{titulo}{Título del componente.}
 \item{cuerpo}{Contenido de la columna Kanban.}
 \item{cantidad}{Contador visible de la columna.}
