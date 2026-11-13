@@ -50,6 +50,7 @@ TablaVancouverDatos <- function(datos, columnas = NULL, col_specs = NULL, col_la
     if (!is.null(spec$name)) etiquetas[[nombre]] <- spec$name
     if (nombre %in% names(col_labels)) etiquetas[[nombre]] <- col_labels[[nombre]]
     formato <- spec$format
+    if (is.null(formato)) formato <- attr(datos, "formatos_vancouver")[[nombre]]
     if (!is.null(formato$cell)) formato <- formato$cell
     if (is.numeric(datos[[nombre]])) {
       digitos <- if (is.null(formato$digits)) 2 else formato$digits

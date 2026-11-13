@@ -39,3 +39,5 @@ export(ColumnaKanbanUI)
 export(TableroKanbanUI)
 
 export(PaletaPrioridadesTareas)
+
+export(TarjetaKanbanUI)
