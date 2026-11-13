@@ -41,3 +41,5 @@ export(TableroKanbanUI)
 export(PaletaPrioridadesTareas)
 
 export(TarjetaKanbanUI)
+
+export(TimelineUI)
