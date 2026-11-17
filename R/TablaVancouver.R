@@ -12,13 +12,16 @@
 #' @export
 TablaVancouverUI <- function(id, titulo = NULL, subtitulo = NULL, footer = NULL, footer_tipo = "info",
                           sortable = TRUE, mostrar_nota = TRUE, estilo = "minimal", searchable = TRUE,
-                          nota_fn = .vancouver_nota) {
+                          nota_fn = .vancouver_nota, descargable = TRUE) {
   ns <- shiny::NS(id)
   shiny::tagList(
     if (!is.null(titulo)) shiny::tags$strong(titulo),
     if (!is.null(subtitulo)) shiny::tags$div(subtitulo),
-    if (searchable) shiny::tags$div(style = "max-width:220px;margin-left:auto;",
-      racafeForms::racafeInputText("buscar", NULL, placeholder = "Buscar...", ns = ns)),
+    shiny::tags$div(style = "display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-bottom:10px;",
+      if (searchable) shiny::tags$div(style = "max-width:220px;",
+        racafeForms::racafeInputText("buscar", NULL, placeholder = "Buscar...", ns = ns)),
+      if (descargable) racafeForms::racafeButtonDownload("descargar_excel", label = "Excel", ns = ns,
+        size = "xs", variant = "secondary")),
     shiny::uiOutput(ns("tabla")),
     shiny::uiOutput(ns("paginacion")),
     if (!is.null(footer)) nota_fn(footer) else shiny::uiOutput(paste0(id, "_nota")))
@@ -118,7 +121,8 @@ TablaVancouverServer <- function(id, data, columnas = NULL, col_specs = NULL, co
                                    searchable = TRUE, page_size = 15, titulo = NULL, subtitulo = NULL, ...,
                                    preparar_fn = NULL,
                                    etiquetas_fn = function(x) stats::setNames(as.list(x), x),
-                                   tabla_fn = .vancouver_tabla, texto_fn = identity, nota_fn = .vancouver_nota) {
+                                   tabla_fn = .vancouver_tabla, texto_fn = identity, nota_fn = .vancouver_nota,
+                                   descargable = TRUE, nombre_archivo = "tabla_vancouver") {
   shiny::moduleServer(id, function(input, output, session) {
     seleccion <- shiny::reactiveVal(NULL)
     orden <- shiny::reactiveVal(list(col = NULL, desc = FALSE))
@@ -159,6 +163,11 @@ TablaVancouverServer <- function(id, data, columnas = NULL, col_specs = NULL, co
     .paginas <- shiny::reactive(max(1L, ceiling(length(.filas()) / page_size)))
     shiny::observeEvent(input$anterior, pagina(max(1L, pagina() - 1L)))
     shiny::observeEvent(input$siguiente, pagina(min(.paginas(), pagina() + 1L)))
+    datos_excel <- shiny::reactive(.vancouver_datos_excel(.datos()[.filas(), , drop = FALSE],
+      .val(columnas), .val(col_specs), .val(col_labels), preparar_fn, etiquetas_fn, texto_fn))
+    if (descargable) output$descargar_excel <- shiny::downloadHandler(
+      filename = function() paste0(gsub("[^[:alnum:]_-]", "_", .val(nombre_archivo)), "_", Sys.Date(), ".xlsx"),
+      content = function(file) writexl::write_xlsx(datos_excel(), file))
     .evento <- function(id, valor) paste0("Shiny.setInputValue(",
       jsonlite::toJSON(session$ns(id), auto_unbox = TRUE), ",", jsonlite::toJSON(valor, auto_unbox = TRUE),
       ",{priority:'event'});")
@@ -192,7 +201,8 @@ TablaVancouverServer <- function(id, data, columnas = NULL, col_specs = NULL, co
       seleccion(list(modo = "fila", row = fila, id = if (!is.null(id_col)) datos[[id_col]][fila] else fila,
         data = datos[fila, , drop = FALSE], fila = datos[fila, , drop = FALSE]))
     })
-    list(seleccion = shiny::reactive(seleccion()), modo = modo_seleccion, limpiar = function() seleccion(NULL))
+    list(seleccion = shiny::reactive(seleccion()), modo = modo_seleccion,
+      datos_excel = datos_excel, limpiar = function() seleccion(NULL))
   })
 }
 
@@ -275,4 +285,35 @@ TablaVancouverCeldas <- function(id, data, titulo = NULL, subtitulo = NULL, foot
         size = modal_size, easy_close = TRUE, footer = racafeForms::racafeModalFooter()))
     }, ignoreInit = TRUE)
   })
+}
+
+# Exportar datos, no botones HTML, sin limitar el resultado a la página visible.
+.vancouver_datos_excel <- function(datos, columnas = NULL, specs = NULL, labels = NULL,
+                                   preparar_fn = NULL, etiquetas_fn = function(x) stats::setNames(as.list(x), x),
+                                   texto_fn = identity) {
+  if (!is.null(preparar_fn)) datos <- preparar_fn(datos, labels)
+  visibles <- if (is.null(columnas)) names(datos) else intersect(columnas, names(datos))
+  visibles <- visibles[!vapply(visibles, function(n) identical(specs[[n]]$show, FALSE), logical(1))]
+  visibles <- visibles[!tolower(visibles) %in% c("accion", "acciones")]
+  salida <- datos[visibles]
+  etiquetas <- etiquetas_fn(visibles)
+  for (n in visibles) {
+    if (!is.null(specs[[n]]$name)) etiquetas[[n]] <- specs[[n]]$name
+    if (n %in% names(labels)) etiquetas[[n]] <- labels[[n]]
+    valor <- salida[[n]]
+    identificador <- grepl("nit", paste(n, etiquetas[[n]]), ignore.case = TRUE) ||
+      n %in% c("Pedido", "CLPdcCod", "PdcCod", "NumeroPedido", "Factura", "NumeroFactura", "Documento", "Lote")
+    if (identificador && is.numeric(valor)) {
+      texto <- format(valor, scientific = FALSE, trim = TRUE, digits = 22, big.mark = "")
+      texto[is.na(valor)] <- NA_character_
+      valor <- texto
+    } else if (is.factor(valor)) valor <- as.character(valor)
+    if (is.list(valor) && !inherits(valor, "POSIXt")) {
+      valor <- vapply(valor, function(x) paste(as.character(x), collapse = " | "), character(1))
+    }
+    if (is.character(valor)) valor <- texto_fn(valor)
+    salida[[n]] <- valor
+  }
+  names(salida) <- make.unique(as.character(unlist(etiquetas[visibles], use.names = FALSE)))
+  salida
 }
